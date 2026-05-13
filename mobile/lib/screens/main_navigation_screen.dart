@@ -4,9 +4,8 @@ import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
 import 'chat_list_screen.dart';
-import 'dashboard_screen.dart';
 import 'intro_screen.dart';
-import 'more_screen.dart';
+import 'intro_screen_stub.dart';
 import 'settings_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
@@ -18,14 +17,9 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _currentIndex = 0;
-  final _dashboardKey = GlobalKey<DashboardScreenState>();
 
   List<Widget> _buildScreens(bool introLayout, VoidCallback? onStartChat) {
     final screens = <Widget>[];
-
-    if (!introLayout) {
-      screens.add(DashboardScreen(key: _dashboardKey));
-    }
 
     if (introLayout) {
       screens.add(IntroScreen(onStartChat: onStartChat));
@@ -34,7 +28,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     screens.add(const ChatListScreen());
 
     if (!introLayout) {
-      screens.add(const MoreScreen());
+      screens.add(const InsightsPreviewScreen());
     }
 
     screens.add(const SettingsScreen());
@@ -47,7 +41,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     AuthProvider authProvider,
     bool introLayout,
   ) async {
-    const chatIndex = 1;
+    final chatIndex = introLayout ? 1 : 0;
 
     if (index == chatIndex && !authProvider.aiEnabled) {
       final enabled = await _showEnableAiPrompt();
@@ -61,29 +55,17 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         _currentIndex = index;
       });
 
-      if (!introLayout && index == 0) {
-        _dashboardKey.currentState?.reloadPreferences();
-      }
+
     }
   }
 
   Future<void> _handleSelectSettings(AuthProvider authProvider, bool introLayout) async {
-    final settingsIndex = introLayout ? 2 : 3;
+    final settingsIndex = _buildScreens(introLayout, null).length - 1;
     await _handleDestinationSelected(settingsIndex, authProvider, introLayout);
   }
 
   List<NavigationDestination> _buildDestinations(bool introLayout) {
     final destinations = <NavigationDestination>[];
-
-    if (!introLayout) {
-      destinations.add(
-        const NavigationDestination(
-          icon: Icon(Icons.home_outlined),
-          selectedIcon: Icon(Icons.home),
-          label: 'Home',
-        ),
-      );
-    }
 
     if (introLayout) {
       destinations.add(
@@ -106,9 +88,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     if (!introLayout) {
       destinations.add(
         const NavigationDestination(
-          icon: Icon(Icons.more_horiz),
-          selectedIcon: Icon(Icons.more_horiz),
-          label: 'More',
+          icon: Icon(Icons.insights_outlined),
+          selectedIcon: Icon(Icons.insights),
+          label: 'Insights',
         ),
       );
     }
@@ -217,7 +199,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, _) {
         final introLayout = authProvider.isIntroLayout;
-        const chatIndex = 1;
+        final chatIndex = introLayout ? 1 : 0;
         final screens = _buildScreens(
           introLayout,
           () => _handleDestinationSelected(chatIndex, authProvider, introLayout),
