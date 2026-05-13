@@ -18,12 +18,30 @@ import 'services/connectivity_service.dart';
 import 'services/log_service.dart';
 import 'services/preferences_service.dart';
 
+// warm white background used throughout the light theme
+const Color _warmBackground = Color(0xFFFDFBF7);
+
+// create color schemes once so they can be reused
+final ColorScheme _lightScheme = ColorScheme.fromSeed(
+  seedColor: const Color(0xFF62A446),
+  brightness: Brightness.light,
+).copyWith(
+  surface: _warmBackground,
+);
+
+final ColorScheme _darkScheme = ColorScheme.fromSeed(
+  seedColor: const Color(0xFF62A446),
+  brightness: Brightness.dark,
+).copyWith(
+  surface: const Color(0xFF121212),
+);
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ApiConfig.initialize();
 
   // Add initial log entry
-  LogService.instance.info('App', 'Sure app starting...');
+  LogService.instance.info('App', 'Chancen Companion starting...');
 
   runApp(const SureApp());
 }
@@ -70,7 +88,7 @@ class SureApp extends StatelessWidget {
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) => MaterialApp(
-        title: 'Sure Finances',
+        title: 'Chancen Companion',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           fontFamily: 'Geist',
@@ -79,10 +97,8 @@ class SureApp extends StatelessWidget {
             'Arial',
             'sans-serif',
           ],
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF6366F1),
-            brightness: Brightness.light,
-          ),
+          colorScheme: _lightScheme,
+          scaffoldBackgroundColor: _lightScheme.surface,
           useMaterial3: true,
           appBarTheme: const AppBarTheme(
             centerTitle: true,
@@ -116,10 +132,8 @@ class SureApp extends StatelessWidget {
             'Arial',
             'sans-serif',
           ],
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF6366F1),
-            brightness: Brightness.dark,
-          ),
+          colorScheme: _darkScheme,
+          scaffoldBackgroundColor: _darkScheme.surface,
           useMaterial3: true,
           appBarTheme: const AppBarTheme(
             centerTitle: true,
