@@ -19,3 +19,4 @@ class AssistantConfigurableTest < ActiveSupport::TestCase
     assert_includes config[:instructions], "Income Share Agreements"
   end
 end
+
