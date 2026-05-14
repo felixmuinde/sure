@@ -641,14 +641,10 @@ class _TypingIndicatorBubble extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: colorScheme.primaryContainer,
-            child: Icon(
-              Icons.smart_toy,
-              size: 18,
-              color: colorScheme.onPrimaryContainer,
-            ),
+          SvgPicture.asset(
+            'assets/images/companion-logo.svg',
+            width: 32,
+            height: 32,
           ),
           const SizedBox(width: 8),
           Container(
