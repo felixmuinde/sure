@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
-class IntroScreenPlatform extends StatefulWidget {
-  const IntroScreenPlatform({super.key, this.onStartChat});
+class InsightsPreviewScreen extends StatefulWidget {
+  const InsightsPreviewScreen({super.key, this.onStartChat});
 
   final VoidCallback? onStartChat;
 
   @override
-  State<IntroScreenPlatform> createState() => _IntroScreenPlatformState();
+  State<InsightsPreviewScreen> createState() => _InsightsPreviewScreenState();
 }
 
-class _IntroScreenPlatformState extends State<IntroScreenPlatform>
+class _InsightsPreviewScreenState extends State<InsightsPreviewScreen>
     with AutomaticKeepAliveClientMixin {
   late final WebViewController _controller;
   bool? _lastIsDark;
