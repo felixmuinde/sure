@@ -1,30 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../providers/auth_provider.dart';
-import '../services/api_config.dart';
-import 'backend_config_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  final VoidCallback? onGoToSettings;
-
-  const LoginScreen({super.key, this.onGoToSettings});
-
-  void _openSettings(BuildContext context) {
-    if (onGoToSettings != null) {
-      onGoToSettings!();
-      return;
-    }
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (routeContext) => BackendConfigScreen(
-          onConfigSaved: () => Navigator.of(routeContext).pop(),
-        ),
-      ),
-    );
-  }
+  const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -32,156 +12,21 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  static const _emailPlaceholder = 'user@example.com';
-  static const _passwordPlaceholder = 'Password1!';
-  final _emailController = TextEditingController(text: _emailPlaceholder);
-  final _passwordController = TextEditingController(text: _passwordPlaceholder);
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _otpController = TextEditingController();
   final _emailFocus = FocusNode();
   final _passwordFocus = FocusNode();
   bool _obscurePassword = true;
-  late final TapGestureRecognizer _signUpTapRecognizer;
-
-  @override
-  void initState() {
-    super.initState();
-    _signUpTapRecognizer = TapGestureRecognizer()..onTap = _openSignUpPage;
-    _emailFocus.addListener(() => _clearPlaceholderOnFocus(
-          _emailFocus, _emailController, _emailPlaceholder));
-    _passwordFocus.addListener(() => _clearPlaceholderOnFocus(
-          _passwordFocus, _passwordController, _passwordPlaceholder));
-  }
-
-  void _clearPlaceholderOnFocus(
-      FocusNode node, TextEditingController controller, String placeholder) {
-    if (node.hasFocus && controller.text == placeholder) {
-      controller.clear();
-    }
-  }
 
   @override
   void dispose() {
-    _signUpTapRecognizer.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _otpController.dispose();
     _emailFocus.dispose();
     _passwordFocus.dispose();
     super.dispose();
-  }
-
-  Future<void> _openSignUpPage() async {
-    final signUpUrl = Uri.parse('${ApiConfig.baseUrl}/registration/new');
-    final launched = await launchUrl(
-      signUpUrl,
-      mode: LaunchMode.externalApplication,
-    );
-
-    if (!launched && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to open sign up page')),
-      );
-    }
-  }
-
-  void _showApiKeyDialog() {
-    final apiKeyController = TextEditingController();
-    final outerContext = context;
-    bool isLoading = false;
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (_, setDialogState) {
-            return AlertDialog(
-              title: const Text('API Key Login'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Enter your API key to sign in.',
-                    style:
-                        Theme.of(outerContext).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(outerContext)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: apiKeyController,
-                    decoration: const InputDecoration(
-                      labelText: 'API Key',
-                      prefixIcon: Icon(Icons.vpn_key_outlined),
-                    ),
-                    obscureText: true,
-                    maxLines: 1,
-                    enabled: !isLoading,
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: isLoading
-                      ? null
-                      : () {
-                          apiKeyController.dispose();
-                          Navigator.of(dialogContext).pop();
-                        },
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: isLoading
-                      ? null
-                      : () async {
-                          final apiKey = apiKeyController.text.trim();
-                          if (apiKey.isEmpty) return;
-
-                          setDialogState(() {
-                            isLoading = true;
-                          });
-
-                          final authProvider = Provider.of<AuthProvider>(
-                            outerContext,
-                            listen: false,
-                          );
-                          final success = await authProvider.loginWithApiKey(
-                            apiKey: apiKey,
-                          );
-
-                          if (!dialogContext.mounted) return;
-
-                          final errorMsg = authProvider.errorMessage;
-                          apiKeyController.dispose();
-                          Navigator.of(dialogContext).pop();
-
-                          if (!success && mounted) {
-                            ScaffoldMessenger.of(outerContext).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  errorMsg ?? 'Invalid API key',
-                                ),
-                                backgroundColor:
-                                    Theme.of(outerContext).colorScheme.error,
-                              ),
-                            );
-                          }
-                        },
-                  child: isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Sign In'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
   }
 
   Future<void> _handleLogin() async {
@@ -230,24 +75,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       height: 80,
                     ),
                     const SizedBox(height: 24),
-                    Text.rich(
-                      TextSpan(
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                        children: [
-                          const TextSpan(text: 'Demo account or '),
-                          TextSpan(
-                            text: 'Sign Up',
-                            style: TextStyle(
-                              color: colorScheme.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            recognizer: _signUpTapRecognizer,
+                    Text(
+                      'Welcome back',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
                           ),
-                          const TextSpan(text: '!'),
-                        ],
-                      ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 48),
@@ -472,63 +304,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       },
                     ),
 
-                    const SizedBox(height: 24),
-
-                    // Backend URL info
-                    InkWell(
-                      onTap: () => widget._openSettings(context),
-                      borderRadius: BorderRadius.circular(8),
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest
-                              .withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Column(
-                          children: [
-                            Text(
-                              'Sure server URL:',
-                              style:
-                                  Theme.of(context).textTheme.bodySmall?.copyWith(
-                                        color: colorScheme.onSurfaceVariant,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              ApiConfig.baseUrl,
-                              style:
-                                  Theme.of(context).textTheme.bodySmall?.copyWith(
-                                        color: colorScheme.primary,
-                                        fontFamily: 'monospace',
-                                      ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // API Key Login Button
-                    TextButton.icon(
-                      onPressed: _showApiKeyDialog,
-                      icon: const Icon(Icons.vpn_key_outlined, size: 18),
-                      label: const Text('API-Key Login'),
-                    ),
                   ],
                 ),
-              ),
-            ),
-            Positioned(
-              right: 8,
-              top: 8,
-              child: IconButton(
-                icon: const Icon(Icons.settings_outlined),
-                tooltip: 'Backend Settings',
-                onPressed: () => widget._openSettings(context),
               ),
             ),
           ],
