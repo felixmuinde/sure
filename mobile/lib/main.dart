@@ -39,6 +39,8 @@ final ColorScheme _darkScheme = ColorScheme.fromSeed(
   surfaceContainer: const Color(0xFF070707),
   surfaceContainerHigh: const Color(0xFF0A0A0A),
   surfaceContainerHighest: const Color(0xFF0E0E0E),
+  onSurface: const Color(0xFFF0F0F0),
+  onSurfaceVariant: const Color(0xFFC0C0C0),
 );
 
 void main() async {
