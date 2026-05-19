@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import 'chat_conversation_screen.dart';
 
 class InsightsPreviewScreen extends StatefulWidget {
   const InsightsPreviewScreen({super.key, this.onStartChat});
@@ -126,7 +127,11 @@ class _AssistantCtaCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
                 FilledButton.icon(
-                  onPressed: onTap,
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const ChatConversationScreen(chatId: null),
+                    ),
+                  ),
                   icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
                   label: const Text('Start a conversation'),
                   style: FilledButton.styleFrom(
