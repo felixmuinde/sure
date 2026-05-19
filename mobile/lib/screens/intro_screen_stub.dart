@@ -1,5 +1,5 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 
 class InsightsPreviewScreen extends StatefulWidget {
   const InsightsPreviewScreen({super.key, this.onStartChat});
@@ -12,303 +12,637 @@ class InsightsPreviewScreen extends StatefulWidget {
 
 class _InsightsPreviewScreenState extends State<InsightsPreviewScreen>
     with AutomaticKeepAliveClientMixin {
-  late final WebViewController _controller;
-  bool? _lastIsDark;
-
   @override
   bool get wantKeepAlive => true;
 
   @override
-  void initState() {
-    super.initState();
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.disabled)
-      ..setBackgroundColor(Colors.transparent);
+  Widget build(BuildContext context) {
+    super.build(context);
+    return const _AccountSummaryView();
+  }
+}
+
+class _AccountSummaryView extends StatelessWidget {
+  const _AccountSummaryView();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'My Account',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Live data coming soon',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _IsaCard(theme: theme),
+          const SizedBox(height: 16),
+          _SpendingInsightsCard(theme: theme),
+        ],
+      ),
+    );
+  }
+}
+
+class _IsaCard extends StatelessWidget {
+  const _IsaCard({required this.theme});
+
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'ISA Balance',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'KSh 15,000',
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10A861).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          'Excellent',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: const Color(0xFF10A861),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const _CircularProgress(progress: 0.6),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Divider(height: 1, color: theme.dividerColor),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _StatItem(
+                    label: 'Tuition Paid',
+                    value: 'KSh 9,000',
+                    theme: theme,
+                    align: CrossAxisAlignment.start,
+                  ),
+                ),
+                VerticalDivider(
+                  width: 1,
+                  thickness: 1,
+                  color: theme.dividerColor,
+                ),
+                Expanded(
+                  child: _StatItem(
+                    label: 'Repayments\nReceived',
+                    value: 'KSh 6,000',
+                    theme: theme,
+                    align: CrossAxisAlignment.end,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatItem extends StatelessWidget {
+  const _StatItem({
+    required this.label,
+    required this.value,
+    required this.theme,
+    required this.align,
+  });
+
+  final String label;
+  final String value;
+  final ThemeData theme;
+  final CrossAxisAlignment align;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Column(
+        crossAxisAlignment: align,
+        children: [
+          Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CircularProgress extends StatelessWidget {
+  const _CircularProgress({required this.progress});
+
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SizedBox(
+      width: 76,
+      height: 76,
+      child: CustomPaint(
+        painter: _CircularProgressPainter(
+          progress: progress,
+          trackColor: theme.colorScheme.outlineVariant,
+        ),
+        child: Center(
+          child: Text(
+            '${(progress * 100).round()}%',
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CircularProgressPainter extends CustomPainter {
+  _CircularProgressPainter({
+    required this.progress,
+    required this.trackColor,
+  });
+
+  final double progress;
+  final Color trackColor;
+
+  static const _strokeWidth = 8.0;
+  static const _progressColor = Color(0xFF10A861);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - _strokeWidth / 2;
+
+    final trackPaint = Paint()
+      ..color = trackColor
+      ..strokeWidth = _strokeWidth
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    canvas.drawCircle(center, radius, trackPaint);
+
+    final progressPaint = Paint()
+      ..color = _progressColor
+      ..strokeWidth = _strokeWidth
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -math.pi / 2,
+      2 * math.pi * progress,
+      false,
+      progressPaint,
+    );
   }
 
-  void _reloadIfThemeChanged(bool isDark) {
-    if (isDark != _lastIsDark) {
-      _lastIsDark = isDark;
-      _controller.loadHtmlString(_buildHtml(isDark));
+  @override
+  bool shouldRepaint(_CircularProgressPainter old) =>
+      old.progress != progress || old.trackColor != trackColor;
+}
+
+// ---------------------------------------------------------------------------
+// Spending Insights section
+// ---------------------------------------------------------------------------
+
+class _SpendingCategory {
+  const _SpendingCategory({
+    required this.name,
+    required this.amount,
+    required this.color,
+  });
+  final String name;
+  final double amount;
+  final Color color;
+}
+
+const _kSpendingCategories = [
+  _SpendingCategory(name: 'Family Support', amount: 1100, color: Color(0xFF6172F3)),
+  _SpendingCategory(name: 'Transport',      amount: 800,  color: Color(0xFFF97316)),
+  _SpendingCategory(name: 'Groceries',      amount: 700,  color: Color(0xFF10A861)),
+  _SpendingCategory(name: 'Matatu & Boda',  amount: 556,  color: Color(0xFFEAB308)),
+  _SpendingCategory(name: 'Eating Out',     amount: 350,  color: Color(0xFFEF4444)),
+  _SpendingCategory(name: 'Airtime',        amount: 350,  color: Color(0xFF8B5CF6)),
+  _SpendingCategory(name: 'Clothing',       amount: 200,  color: Color(0xFF06B6D4)),
+  _SpendingCategory(name: 'Uncategorised',  amount: 1457, color: Color(0xFF737373)),
+];
+
+class _SpendingInsightsCard extends StatelessWidget {
+  const _SpendingInsightsCard({required this.theme});
+
+  final ThemeData theme;
+
+  double get _totalSpend =>
+      _kSpendingCategories.fold(0.0, (sum, c) => sum + c.amount);
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Spending Insights',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: theme.dividerColor),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Sample data',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Based on average student spending in Nairobi',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Monthly summary row
+            _MonthlySummaryRow(theme: theme),
+
+            const SizedBox(height: 20),
+            Divider(height: 1, color: theme.dividerColor),
+            const SizedBox(height: 16),
+
+            Text(
+              'Where the money goes',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Donut chart
+            _DonutChart(
+              categories: _kSpendingCategories,
+              totalSpend: _totalSpend,
+              theme: theme,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MonthlySummaryRow extends StatelessWidget {
+  const _MonthlySummaryRow({required this.theme});
+
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _SummaryCell(
+            label: 'Income',
+            value: 'KSh 7,000',
+            valueColor: const Color(0xFF10A861),
+            theme: theme,
+          ),
+        ),
+        Expanded(
+          child: _SummaryCell(
+            label: 'Expenses',
+            value: 'KSh 5,513',
+            valueColor: theme.colorScheme.error,
+            theme: theme,
+          ),
+        ),
+        Expanded(
+          child: _SummaryCell(
+            label: 'Surplus',
+            value: 'KSh 1,488',
+            valueColor: const Color(0xFF10A861),
+            theme: theme,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SummaryCell extends StatelessWidget {
+  const _SummaryCell({
+    required this.label,
+    required this.value,
+    required this.valueColor,
+    required this.theme,
+  });
+
+  final String label;
+  final String value;
+  final Color valueColor;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: valueColor,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Donut chart + legend
+// ---------------------------------------------------------------------------
+
+class _DonutChart extends StatelessWidget {
+  const _DonutChart({
+    required this.categories,
+    required this.totalSpend,
+    required this.theme,
+  });
+
+  final List<_SpendingCategory> categories;
+  final double totalSpend;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        SizedBox(
+          width: 180,
+          height: 180,
+          child: CustomPaint(
+            painter: _DonutPainter(
+              categories: categories,
+              totalSpend: totalSpend,
+            ),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'KSh 5,513',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    'total spent',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        // Two-column legend
+        _DonutLegend(
+          categories: categories,
+          totalSpend: totalSpend,
+          theme: theme,
+        ),
+      ],
+    );
+  }
+}
+
+class _DonutPainter extends CustomPainter {
+  _DonutPainter({required this.categories, required this.totalSpend});
+
+  final List<_SpendingCategory> categories;
+  final double totalSpend;
+
+  static const _strokeWidth = 22.0;
+  static const _gap = 0.025; // radians gap between segments
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (totalSpend <= 0) return;
+
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - _strokeWidth / 2;
+    double startAngle = -math.pi / 2;
+
+    for (final cat in categories) {
+      final sweep =
+          (cat.amount / totalSpend) * 2 * math.pi - _gap;
+      if (sweep <= 0) continue;
+
+      final paint = Paint()
+        ..color = cat.color
+        ..strokeWidth = _strokeWidth
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.butt;
+
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        startAngle + _gap / 2,
+        sweep,
+        false,
+        paint,
+      );
+
+      startAngle += sweep + _gap;
     }
   }
 
   @override
+  bool shouldRepaint(_DonutPainter old) => false;
+}
+
+class _DonutLegend extends StatelessWidget {
+  const _DonutLegend({
+    required this.categories,
+    required this.totalSpend,
+    required this.theme,
+  });
+
+  final List<_SpendingCategory> categories;
+  final double totalSpend;
+  final ThemeData theme;
+
+  String _fmt(double v) => v
+      .toInt()
+      .toString()
+      .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]},');
+
+  @override
   Widget build(BuildContext context) {
-    super.build(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    _reloadIfThemeChanged(isDark);
-    return WebViewWidget(controller: _controller);
+    // Split into two columns
+    final left = <_SpendingCategory>[];
+    final right = <_SpendingCategory>[];
+    for (var i = 0; i < categories.length; i++) {
+      (i.isEven ? left : right).add(categories[i]);
+    }
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: _LegendColumn(items: left, totalSpend: totalSpend, theme: theme, fmt: _fmt)),
+        const SizedBox(width: 8),
+        Expanded(child: _LegendColumn(items: right, totalSpend: totalSpend, theme: theme, fmt: _fmt)),
+      ],
+    );
   }
 }
 
-String _buildHtml(bool isDark) {
-  final bg = isDark ? '#1a1a1a' : '#ffffff';
-  final textPrimary = isDark ? '#f5f5f5' : '#111827';
-  final textSecondary = isDark ? '#a3a3a3' : '#4b5563';
-  final cardBg = isDark ? '#262626' : '#ffffff';
-  final cardBorder = isDark ? '#404040' : '#e5e7eb';
-  final badgeBg = isDark ? '#333333' : '#f3f4f6';
-  const colorSuccess = '#10A861';
+class _LegendColumn extends StatelessWidget {
+  const _LegendColumn({
+    required this.items,
+    required this.totalSpend,
+    required this.theme,
+    required this.fmt,
+  });
 
-  const prompts = [
-    {
-      'title': '\u26A0\uFE0F UPDATE \u26A0\uFE0F',
-      'desc':
-          'Your side hustle income could cover groceries and several other expenses, reducing the need for a loan. Consider redirecting your side hustle earnings to priority expenses like groceries before borrowing. Family support is your largest expense category. However, you can trim eating out and reduce uncategorised spending to minimise future loan dependence. By maximising your side hustle and cutting back on non-essential expenses, you could avoid loans altogether and build a stronger financial foundation.',
-    },
-    {
-      'title': '\uD83D\uDD0D Show spending insights',
-      'desc': 'We update this data weekly with fresh insights.',
-    },
-    {
-      'title': '\uD83D\uDCA1 Your Turn Soon',
-      'desc':
-          'You will soon be able to get personalized insights just like this!',
-    },
-    {
-      'title': '\uD83D\uDCF3 M-PESA Integration',
-      'desc':
-          'We are working on integrating M-PESA to make it easier to add income and expenses.',
-    },
-  ];
+  final List<_SpendingCategory> items;
+  final double totalSpend;
+  final ThemeData theme;
+  final String Function(double) fmt;
 
-  final promptCards = StringBuffer();
-  for (final p in prompts) {
-    promptCards.write('''
-    <div style="background:$cardBg;border:1px solid $cardBorder;border-radius:16px;padding:16px;margin-bottom:12px;">
-      <p style="font-weight:600;color:$textPrimary;margin:0 0 4px 0;font-size:14px;">${p['title']}</p>
-      <p style="color:$textSecondary;margin:0;font-size:13px;line-height:1.5;">${p['desc']}</p>
-    </div>
-    ''');
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: items.map((cat) {
+        final pct = totalSpend > 0
+            ? (cat.amount / totalSpend * 100).round()
+            : 0;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 3),
+                child: Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: cat.color,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      cat.name,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Text(
+                      'KSh ${fmt(cat.amount)} · $pct%',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
   }
-
-  return '''
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: $bg;
-      color: $textPrimary;
-      padding: 16px;
-      -webkit-text-size-adjust: 100%;
-    }
-    .container { max-width: 560px; margin: 0 auto; }
-    .header-card {
-      background: $cardBg;
-      border: 1px solid $cardBorder;
-      border-radius: 16px;
-      padding: 24px;
-      margin-bottom: 24px;
-    }
-    .header-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 12px;
-      margin-bottom: 8px;
-    }
-    .badge {
-      flex-shrink: 0;
-      background: $badgeBg;
-      border: 1px solid $cardBorder;
-      border-radius: 999px;
-      padding: 4px 10px;
-      font-size: 11px;
-      white-space: nowrap;
-      color: $textPrimary;
-    }
-    h1 { font-size: 20px; font-weight: 600; margin: 0; }
-    .subtitle { color: $textSecondary; font-size: 14px; }
-    .chart-container {
-      width: 100%;
-      margin-bottom: 24px;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-    }
-    .chart-container svg {
-      display: block;
-      width: 100%;
-      height: auto;
-    }
-    .text-xs { font-size: 11px; }
-    .font-medium { font-weight: 500; }
-    .font-mono { font-family: ui-monospace, SFMono-Regular, monospace; }
-    .text-primary { fill: $textPrimary; }
-    .text-secondary { fill: $textSecondary; }
-    .fill-current { fill: currentColor; }
-    .select-none { user-select: none; -webkit-user-select: none; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header-card">
-      <div class="header-top">
-        <h1>Budget Analyser Preview</h1>
-        <div class="badge">Coming Soon!</div>
-      </div>
-      <p class="subtitle">See how average students in Nairobi spend their money.</p>
-    </div>
-
-    <div class="chart-container">
-      <svg viewBox="0 0 388 384" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="lg-1-0" gradientUnits="userSpaceOnUse" x1="31" x2="186.5">
-            <stop offset="0%" stop-color="rgba(97,114,243,0.1)"/>
-            <stop offset="100%" stop-color="rgba(16,168,97,0.1)"/>
-          </linearGradient>
-          <linearGradient id="lg-2-0" gradientUnits="userSpaceOnUse" x1="31" x2="186.5">
-            <stop offset="0%" stop-color="rgba(106,210,138,0.1)"/>
-            <stop offset="100%" stop-color="rgba(16,168,97,0.1)"/>
-          </linearGradient>
-          <linearGradient id="lg-0-3" gradientUnits="userSpaceOnUse" x1="201.5" x2="357">
-            <stop offset="0%" stop-color="rgba(16,168,97,0.1)"/>
-            <stop offset="100%" stop-color="rgba(97,114,243,0.1)"/>
-          </linearGradient>
-          <linearGradient id="lg-0-10" gradientUnits="userSpaceOnUse" x1="201.5" x2="357">
-            <stop offset="0%" stop-color="rgba(16,168,97,0.1)"/>
-            <stop offset="100%" stop-color="rgba(115,115,115,0.1)"/>
-          </linearGradient>
-          <linearGradient id="lg-0-11" gradientUnits="userSpaceOnUse" x1="201.5" x2="357">
-            <stop offset="0%" stop-color="rgba(16,168,97,0.1)"/>
-            <stop offset="100%" stop-color="rgba(16,168,97,0.1)"/>
-          </linearGradient>
-        </defs>
-
-        <!-- Links: income → Cash Flow -->
-        <g fill="none">
-          <path d="M31,176.57C108.75,176.57,108.75,192.17,186.5,192.17" stroke="url(#lg-1-0)" stroke-width="41.14"/>
-          <path d="M31,292.57C108.75,292.57,108.75,288.17,186.5,288.17" stroke="url(#lg-2-0)" stroke-width="150.86"/>
-          <!-- Cash Flow → expenses -->
-          <path d="M201.5,181.2C279.25,181.2,279.25,25.6,357,25.6" stroke="url(#lg-0-3)" stroke-width="19.2"/>
-          <path d="M201.5,198.42C279.25,198.42,279.25,62.83,357,62.83" stroke="url(#lg-0-3)" stroke-width="15.25"/>
-          <path d="M201.5,210.85C279.25,210.85,279.25,95.25,357,95.25" stroke="url(#lg-0-3)" stroke-width="9.6"/>
-          <path d="M201.5,218.39C279.25,218.39,279.25,122.79,357,122.79" stroke="url(#lg-0-3)" stroke-width="5.49"/>
-          <path d="M201.5,232.1C279.25,232.1,279.25,156.51,357,156.51" stroke="url(#lg-0-3)" stroke-width="21.94"/>
-          <path d="M201.5,247.87C279.25,247.87,279.25,192.28,357,192.28" stroke="url(#lg-0-3)" stroke-width="9.6"/>
-          <path d="M201.5,267.76C279.25,267.76,279.25,232.16,357,232.16" stroke="url(#lg-0-3)" stroke-width="30.17"/>
-          <path d="M201.5,302.82C279.25,302.82,279.25,287.23,357,287.23" stroke="url(#lg-0-10)" stroke-width="39.95"/>
-          <path d="M201.5,343.2C279.25,343.2,279.25,347.6,357,347.6" stroke="url(#lg-0-11)" stroke-width="40.8"/>
-        </g>
-
-        <!-- Cash Flow node (center) -->
-        <g>
-          <rect x="186.5" y="171.6" width="15" height="192" fill="$colorSuccess" rx="0"/>
-          <text x="207.5" y="264" dy="-0.2em" text-anchor="start" style="font-size:11px;font-weight:500;fill:$textPrimary;cursor:default;">
-            <tspan>Cash Flow</tspan>
-            <tspan x="207.5" dy="1.2em" style="font-size:9px;fill:$textSecondary;font-family:monospace;">KSh7,000.00</tspan>
-          </text>
-        </g>
-
-        <!-- Loan node (left) -->
-        <g>
-          <path d="M24,156 L31,156 L31,197.14 L24,197.14 Q16,197.14 16,189.14 L16,164 Q16,156 24,156Z" fill="#6172F3"/>
-          <text x="37" y="176.57" dy="-0.2em" text-anchor="start" style="font-size:11px;font-weight:500;fill:$textPrimary;cursor:default;">
-            <tspan>Loan</tspan>
-            <tspan x="37" dy="1.2em" style="font-size:9px;fill:$textSecondary;font-family:monospace;">KSh1,500.00</tspan>
-          </text>
-        </g>
-
-        <!-- Side Hustle node (left) -->
-        <g>
-          <path d="M24,217.14 L31,217.14 L31,368 L24,368 Q16,368 16,360 L16,225.14 Q16,217.14 24,217.14Z" fill="#6ad28a"/>
-          <text x="37" y="292.57" dy="-0.2em" text-anchor="start" style="font-size:11px;font-weight:500;fill:$textPrimary;cursor:default;">
-            <tspan>Side Hustle</tspan>
-            <tspan x="37" dy="1.2em" style="font-size:9px;fill:$textSecondary;font-family:monospace;">KSh5,500.00</tspan>
-          </text>
-        </g>
-
-        <!-- Groceries (right) -->
-        <g>
-          <path d="M357,16 L364,16 Q372,16 372,24 L372,27.2 Q372,35.2 364,35.2 L357,35.2Z" fill="#6172F3"/>
-          <text x="351" y="25.6" dy="-0.2em" text-anchor="end" style="font-size:11px;font-weight:500;fill:$textPrimary;cursor:default;">
-            <tspan>Groceries</tspan>
-            <tspan x="351" dy="1.2em" style="font-size:9px;fill:$textSecondary;font-family:monospace;">KSh700.00</tspan>
-          </text>
-        </g>
-
-        <!-- Matatu & Boda (right) -->
-        <g>
-          <path d="M357,55.2 L364.37,55.2 Q372,55.2 372,62.83 L372,62.83 Q372,70.45 364.37,70.45 L357,70.45Z" fill="#6172F3"/>
-          <text x="351" y="62.83" dy="-0.2em" text-anchor="end" style="font-size:11px;font-weight:500;fill:$textPrimary;cursor:default;">
-            <tspan>Matatu &amp; Boda</tspan>
-            <tspan x="351" dy="1.2em" style="font-size:9px;fill:$textSecondary;font-family:monospace;">KSh556.00</tspan>
-          </text>
-        </g>
-
-        <!-- Airtime (right) -->
-        <g>
-          <path d="M357,90.45 L367.2,90.45 Q372,90.45 372,95.25 L372,95.25 Q372,100.05 367.2,100.05 L357,100.05Z" fill="#6172F3"/>
-          <text x="351" y="95.25" dy="-0.2em" text-anchor="end" style="font-size:11px;font-weight:500;fill:$textPrimary;cursor:default;">
-            <tspan>Airtime</tspan>
-            <tspan x="351" dy="1.2em" style="font-size:9px;fill:$textSecondary;font-family:monospace;">KSh350.00</tspan>
-          </text>
-        </g>
-
-        <!-- Clothing (right) -->
-        <g>
-          <path d="M357,120.05 L369.26,120.05 Q372,120.05 372,122.79 L372,122.79 Q372,125.54 369.26,125.54 L357,125.54Z" fill="#6172F3"/>
-          <text x="351" y="122.79" dy="-0.2em" text-anchor="end" style="font-size:11px;font-weight:500;fill:$textPrimary;cursor:default;">
-            <tspan>Clothing</tspan>
-            <tspan x="351" dy="1.2em" style="font-size:9px;fill:$textSecondary;font-family:monospace;">KSh200.00</tspan>
-          </text>
-        </g>
-
-        <!-- Transport (right) -->
-        <g>
-          <path d="M357,145.54 L364,145.54 Q372,145.54 372,153.54 L372,159.48 Q372,167.48 364,167.48 L357,167.48Z" fill="#6172F3"/>
-          <text x="351" y="156.51" dy="-0.2em" text-anchor="end" style="font-size:11px;font-weight:500;fill:$textPrimary;cursor:default;">
-            <tspan>Transport</tspan>
-            <tspan x="351" dy="1.2em" style="font-size:9px;fill:$textSecondary;font-family:monospace;">KSh800.00</tspan>
-          </text>
-        </g>
-
-        <!-- Eating Out (right) -->
-        <g>
-          <path d="M357,187.48 L367.2,187.48 Q372,187.48 372,192.28 L372,192.28 Q372,197.08 367.2,197.08 L357,197.08Z" fill="#6172F3"/>
-          <text x="351" y="192.28" dy="-0.2em" text-anchor="end" style="font-size:11px;font-weight:500;fill:$textPrimary;cursor:default;">
-            <tspan>Eating Out</tspan>
-            <tspan x="351" dy="1.2em" style="font-size:9px;fill:$textSecondary;font-family:monospace;">KSh350.00</tspan>
-          </text>
-        </g>
-
-        <!-- Family Support (right) -->
-        <g>
-          <path d="M357,217.08 L364,217.08 Q372,217.08 372,225.08 L372,239.25 Q372,247.25 364,247.25 L357,247.25Z" fill="#6172F3"/>
-          <text x="351" y="232.16" dy="-0.2em" text-anchor="end" style="font-size:11px;font-weight:500;fill:$textPrimary;cursor:default;">
-            <tspan>Family Support</tspan>
-            <tspan x="351" dy="1.2em" style="font-size:9px;fill:$textSecondary;font-family:monospace;">KSh1,100.00</tspan>
-          </text>
-        </g>
-
-        <!-- Uncategorized (right) -->
-        <g>
-          <path d="M357,267.25 L364,267.25 Q372,267.25 372,275.25 L372,299.2 Q372,307.2 364,307.2 L357,307.2Z" fill="#737373"/>
-          <text x="351" y="287.23" dy="-0.2em" text-anchor="end" style="font-size:11px;font-weight:500;fill:$textPrimary;cursor:default;">
-            <tspan>Uncategorized</tspan>
-            <tspan x="351" dy="1.2em" style="font-size:9px;fill:$textSecondary;font-family:monospace;">KSh1,456.50</tspan>
-          </text>
-        </g>
-
-        <!-- Surplus (right) -->
-        <g>
-          <path d="M357,327.2 L364,327.2 Q372,327.2 372,335.2 L372,360 Q372,368 364,368 L357,368Z" fill="$colorSuccess"/>
-          <text x="351" y="347.6" dy="-0.2em" text-anchor="end" style="font-size:11px;font-weight:500;fill:$textPrimary;cursor:default;">
-            <tspan>Surplus</tspan>
-            <tspan x="351" dy="1.2em" style="font-size:9px;fill:$textSecondary;font-family:monospace;">KSh1,487.50</tspan>
-          </text>
-        </g>
-      </svg>
-    </div>
-
-    $promptCards
-  </div>
-</body>
-</html>
-''';
 }

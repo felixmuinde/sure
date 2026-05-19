@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
 import 'chat_list_screen.dart';
-import 'intro_screen.dart';
 import 'intro_screen_stub.dart';
 import 'settings_screen.dart';
 
@@ -18,32 +17,20 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _currentIndex = 0;
 
-  List<Widget> _buildScreens(bool introLayout, VoidCallback? onStartChat) {
-    final screens = <Widget>[];
-
-    if (introLayout) {
-      screens.add(IntroScreen(onStartChat: onStartChat));
-    }
-
-    screens.add(const ChatListScreen());
-
-    if (!introLayout) {
-      screens.add(const InsightsPreviewScreen());
-    }
-
-    screens.add(const SettingsScreen());
-
-    return screens;
+  List<Widget> _buildScreens() {
+    return [
+      const ChatListScreen(),
+      const InsightsPreviewScreen(),
+      const SettingsScreen(),
+    ];
   }
 
   Future<void> _handleDestinationSelected(
     int index,
     AuthProvider authProvider,
-    bool introLayout,
   ) async {
-    final chatIndex = introLayout ? 1 : 0;
-
-    if (index == chatIndex && !authProvider.aiEnabled) {
+    // Chat is always index 0
+    if (index == 0 && !authProvider.aiEnabled) {
       final enabled = await _showEnableAiPrompt();
       if (!enabled) {
         return;
@@ -54,51 +41,30 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       setState(() {
         _currentIndex = index;
       });
-
-
     }
   }
 
-  Future<void> _handleSelectSettings(AuthProvider authProvider, bool introLayout) async {
-    final settingsIndex = _buildScreens(introLayout, null).length - 1;
-    await _handleDestinationSelected(settingsIndex, authProvider, introLayout);
+  Future<void> _handleSelectSettings(AuthProvider authProvider) async {
+    final settingsIndex = _buildScreens().length - 1;
+    await _handleDestinationSelected(settingsIndex, authProvider);
   }
 
-  List<NavigationDestination> _buildDestinations(bool introLayout) {
-    final destinations = <NavigationDestination>[];
-
-    if (introLayout) {
-      destinations.add(
-        const NavigationDestination(
-          icon: Icon(Icons.auto_awesome_outlined),
-          selectedIcon: Icon(Icons.auto_awesome),
-          label: 'Intro',
-        ),
-      );
-    }
-
-    destinations.add(
-      const NavigationDestination(
+  List<NavigationDestination> _buildDestinations() {
+    return const [
+      NavigationDestination(
         icon: Icon(Icons.chat_bubble_outline),
         selectedIcon: Icon(Icons.chat_bubble),
         label: 'Assistant',
       ),
-    );
-
-    if (!introLayout) {
-      destinations.add(
-        const NavigationDestination(
-          icon: Icon(Icons.insights_outlined),
-          selectedIcon: Icon(Icons.insights),
-          label: 'Insights',
-        ),
-      );
-    }
-
-    return destinations;
+      NavigationDestination(
+        icon: Icon(Icons.insights_outlined),
+        selectedIcon: Icon(Icons.insights),
+        label: 'Insights',
+      ),
+    ];
   }
 
-  PreferredSizeWidget _buildTopBar(AuthProvider authProvider, bool introLayout) {
+  PreferredSizeWidget _buildTopBar(AuthProvider authProvider) {
     return AppBar(
       automaticallyImplyLeading: false,
       toolbarHeight: 60,
@@ -125,7 +91,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           child: Center(
             child: InkWell(
               onTap: () {
-                _handleSelectSettings(authProvider, introLayout);
+                _handleSelectSettings(authProvider);
               },
               child: const SizedBox(
                 width: 36,
@@ -198,13 +164,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, _) {
-        final introLayout = authProvider.isIntroLayout;
-        final chatIndex = introLayout ? 1 : 0;
-        final screens = _buildScreens(
-          introLayout,
-          () => _handleDestinationSelected(chatIndex, authProvider, introLayout),
-        );
-        final destinations = _buildDestinations(introLayout);
+        final screens = _buildScreens();
+        final destinations = _buildDestinations();
         final bottomNavIndex = _resolveBottomSelectedIndex(destinations);
 
         if (_currentIndex >= screens.length) {
@@ -212,7 +173,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         }
 
         return Scaffold(
-          appBar: _buildTopBar(authProvider, introLayout),
+          appBar: _buildTopBar(authProvider),
           body: IndexedStack(
             index: _currentIndex,
             children: screens,
@@ -220,7 +181,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           bottomNavigationBar: NavigationBar(
             selectedIndex: bottomNavIndex,
             onDestinationSelected: (index) {
-              _handleDestinationSelected(index, authProvider, introLayout);
+              _handleDestinationSelected(index, authProvider);
             },
             destinations: destinations,
           ),
