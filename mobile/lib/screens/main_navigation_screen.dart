@@ -20,7 +20,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   List<Widget> _buildScreens() {
     return [
       const ChatListScreen(),
-      const InsightsPreviewScreen(),
+      InsightsPreviewScreen(
+        onStartChat: () => setState(() => _currentIndex = 0),
+      ),
       const SettingsScreen(),
     ];
   }

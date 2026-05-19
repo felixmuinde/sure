@@ -1,5 +1,8 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 
 class InsightsPreviewScreen extends StatefulWidget {
   const InsightsPreviewScreen({super.key, this.onStartChat});
@@ -18,21 +21,31 @@ class _InsightsPreviewScreenState extends State<InsightsPreviewScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return const _AccountSummaryView();
+    return _AccountSummaryView(onStartChat: widget.onStartChat);
   }
 }
 
 class _AccountSummaryView extends StatelessWidget {
-  const _AccountSummaryView();
+  const _AccountSummaryView({this.onStartChat});
+
+  final VoidCallback? onStartChat;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final firstName =
+        context.watch<AuthProvider>().user?.firstName ?? 'there';
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _AssistantCtaCard(
+            firstName: firstName,
+            onTap: onStartChat,
+            theme: theme,
+          ),
+          const SizedBox(height: 20),
           Text(
             'My Account',
             style: theme.textTheme.titleLarge?.copyWith(
@@ -48,9 +61,85 @@ class _AccountSummaryView extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           _IsaCard(theme: theme),
-          const SizedBox(height: 16),
-          _SpendingInsightsCard(theme: theme),
         ],
+      ),
+    );
+  }
+}
+
+class _AssistantCtaCard extends StatelessWidget {
+  const _AssistantCtaCard({
+    required this.firstName,
+    required this.theme,
+    this.onTap,
+  });
+
+  final String firstName;
+  final ThemeData theme;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = theme.brightness == Brightness.dark;
+    final gradientStart =
+        isDark ? const Color(0xFF1B2A1E) : const Color(0xFFE8F5EE);
+    final gradientEnd =
+        isDark ? const Color(0xFF1A1A2E) : const Color(0xFFEEF0FB);
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [gradientStart, gradientEnd],
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SvgPicture.asset(
+                  'assets/images/companion-logo.svg',
+                  width: 48,
+                  height: 48,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Hi, $firstName!',
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Ask me anything about your finances — I\'m here to help.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                FilledButton.icon(
+                  onPressed: onTap,
+                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                  label: const Text('Start a conversation'),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
