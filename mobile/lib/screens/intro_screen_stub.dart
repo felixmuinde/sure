@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'chat_conversation_screen.dart';
@@ -104,12 +103,6 @@ class _AssistantCtaCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SvgPicture.asset(
-                  'assets/images/companion-logo.svg',
-                  width: 48,
-                  height: 48,
-                ),
-                const SizedBox(height: 16),
                 Text(
                   'Hi, $firstName!',
                   style: theme.textTheme.headlineMedium?.copyWith(
