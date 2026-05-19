@@ -59,7 +59,16 @@ jobs:
         working-directory: mobile
         run: |
           VERSION_NAME="$(grep -m1 '^version:' pubspec.yaml | awk '{print $2}' | tr -d \"'\\\"\" | cut -d '+' -f1)"
+          if [ -z "$VERSION_NAME" ]; then
+            echo "❌ ERROR: Failed to extract version from pubspec.yaml"
+            exit 1
+          fi
           VERSION_CODE="$(date +%s)"
+          if [ -z "$VERSION_CODE" ]; then
+            echo "❌ ERROR: Failed to generate version code"
+            exit 1
+          fi
+          echo "✓ Extracted version: $VERSION_NAME (code: $VERSION_CODE)"
           echo "APP_VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           echo "APP_VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
 
