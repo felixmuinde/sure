@@ -38,14 +38,14 @@ class _AccountSummaryView extends StatelessWidget {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _AssistantCtaCard(
             firstName: firstName,
             onTap: onStartChat,
             theme: theme,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 6),
           Text(
             'My Account',
             style: theme.textTheme.titleLarge?.copyWith(
@@ -60,7 +60,9 @@ class _AccountSummaryView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          _IsaCard(theme: theme),
+          _IsaFinancingCard(theme: theme),
+          const SizedBox(height: 12),
+          _IsaInstalmentsCard(theme: theme),
         ],
       ),
     );
@@ -87,6 +89,7 @@ class _AssistantCtaCard extends StatelessWidget {
         isDark ? const Color(0xFF1A1A2E) : const Color(0xFFEEF0FB);
 
     return Card(
+      margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
@@ -143,61 +146,148 @@ class _AssistantCtaCard extends StatelessWidget {
   }
 }
 
-class _IsaCard extends StatelessWidget {
-  const _IsaCard({required this.theme});
+enum IsaStatus {
+  contractSigned,
+  repaying,
+  paused,
+  serviceFeeMode,
+  completed,
+  defaulted,
+}
+
+extension IsaStatusDisplay on IsaStatus {
+  String get label {
+    switch (this) {
+      case IsaStatus.contractSigned: return 'Contract Signed';
+      case IsaStatus.repaying:       return 'Repaying';
+      case IsaStatus.paused:         return 'Paused';
+      case IsaStatus.serviceFeeMode: return 'Service Fee Mode';
+      case IsaStatus.completed:      return 'Completed';
+      case IsaStatus.defaulted:      return 'Defaulted';
+    }
+  }
+
+  Color get color {
+    switch (this) {
+      case IsaStatus.contractSigned: return const Color(0xFF2196F3); // blue
+      case IsaStatus.repaying:       return const Color(0xFF10A861); // green
+      case IsaStatus.paused:         return const Color(0xFFFFA726); // amber
+      case IsaStatus.serviceFeeMode: return const Color(0xFFFFA726); // amber
+      case IsaStatus.completed:      return const Color(0xFF10A861); // green
+      case IsaStatus.defaulted:      return const Color(0xFFE53935); // red
+    }
+  }
+
+  IconData get icon {
+    switch (this) {
+      case IsaStatus.contractSigned: return Icons.verified_outlined;
+      case IsaStatus.repaying:       return Icons.trending_up;
+      case IsaStatus.paused:         return Icons.pause_circle_outline;
+      case IsaStatus.serviceFeeMode: return Icons.work_off_outlined;
+      case IsaStatus.completed:      return Icons.check_circle_outline;
+      case IsaStatus.defaulted:      return Icons.warning_amber_outlined;
+    }
+  }
+}
+
+class _IsaFinancingCard extends StatelessWidget {
+  const _IsaFinancingCard({required this.theme});
 
   final ThemeData theme;
 
+  static const _green = Color(0xFF10A861);
+
   @override
   Widget build(BuildContext context) {
+    // Placeholder values — will be replaced with real data
+    // Based on Chancen Kenya ISA contract: max financing KES 268,240,
+    // max repayment = financed amount × 2.6 (160% cap at year 8)
+    const totalFinanced = 'KSh 268,240';
+    const maxPayable = 'KSh 697,424';
+    const amountPaid = 'KSh 45,000';
+    const progress = 45000 / 697424; // ~6.5%
+    const status = IsaStatus.contractSigned;
+
     return Card(
+      margin: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: _green.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(_IsaIcons.financing, color: _green, size: 18),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'ISA Financing',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: status.color.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
+                      Icon(status.icon, size: 13, color: status.color),
+                      const SizedBox(width: 4),
                       Text(
-                        'ISA Balance',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'KSh 15,000',
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF10A861).withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          'Excellent',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: const Color(0xFF10A861),
-                            fontWeight: FontWeight.w600,
-                          ),
+                        status.label,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: status.color,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const _CircularProgress(progress: 0.6),
               ],
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Total Financed',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              totalFinanced,
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: null,
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Progress bar
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 8,
+                backgroundColor: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+                valueColor: const AlwaysStoppedAnimation<Color>(_green),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Amount paid towards maximum payable',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 20),
             Divider(height: 1, color: theme.dividerColor),
@@ -206,21 +296,17 @@ class _IsaCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: _StatItem(
-                    label: 'Tuition Paid',
-                    value: 'KSh 9,000',
+                    label: 'Amount Paid\nTo Date',
+                    value: amountPaid,
                     theme: theme,
                     align: CrossAxisAlignment.start,
                   ),
                 ),
-                VerticalDivider(
-                  width: 1,
-                  thickness: 1,
-                  color: theme.dividerColor,
-                ),
+                VerticalDivider(width: 1, thickness: 1, color: theme.dividerColor),
                 Expanded(
                   child: _StatItem(
-                    label: 'Repayments\nReceived',
-                    value: 'KSh 6,000',
+                    label: 'Maximum\nAmount Payable',
+                    value: maxPayable,
                     theme: theme,
                     align: CrossAxisAlignment.end,
                   ),
@@ -232,6 +318,83 @@ class _IsaCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _IsaInstalmentsCard extends StatelessWidget {
+  const _IsaInstalmentsCard({required this.theme});
+
+  final ThemeData theme;
+
+  static const _green = Color(0xFF10A861);
+
+  @override
+  Widget build(BuildContext context) {
+    // Placeholder values — will be replaced with real data
+    // 108 instalments for final amounts KES 149,301–270,190 (Clause 5)
+    const instalmentsPaid = 9;
+    const maxInstalments = 108;
+    const progress = 9 / 108;
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            const _CircularProgress(progress: progress),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: _green.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(_IsaIcons.instalments, color: _green, size: 18),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Instalments',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Divider(height: 1, color: theme.dividerColor),
+                  const SizedBox(height: 14),
+                  _StatItem(
+                    label: 'Paid So Far',
+                    value: '$instalmentsPaid',
+                    theme: theme,
+                    align: CrossAxisAlignment.start,
+                  ),
+                  const SizedBox(height: 10),
+                  _StatItem(
+                    label: 'Maximum No. of Instalments',
+                    value: '$maxInstalments',
+                    theme: theme,
+                    align: CrossAxisAlignment.start,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+abstract class _IsaIcons {
+  static const financing = Icons.account_balance_outlined;
+  static const instalments = Icons.calendar_month_outlined;
 }
 
 class _StatItem extends StatelessWidget {
