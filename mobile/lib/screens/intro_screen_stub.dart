@@ -39,7 +39,10 @@ class _AccountSummaryView extends StatelessWidget {
     final theme = Theme.of(context);
     final firstName =
         context.watch<AuthProvider>().user?.firstName ?? 'there';
-    return SingleChildScrollView(
+    final bg = theme.brightness == Brightness.light ? Colors.white : Colors.black;
+    return ColoredBox(
+      color: bg,
+      child: SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -48,25 +51,14 @@ class _AccountSummaryView extends StatelessWidget {
           const SizedBox(height: 8),
           _AskAnythingTile(onTap: onStartChat, theme: theme),
           const SizedBox(height: 20),
-          Text(
-            'My Account',
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Live data -',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
+          _SectionHeaderTile(theme: theme),
           const SizedBox(height: 16),
           _IsaFinancingCard(theme: theme),
           const SizedBox(height: 12),
           _IsaInstalmentsCard(theme: theme),
         ],
       ),
+    ),
     );
   }
 }
@@ -81,7 +73,7 @@ class _GreetingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        color: theme.brightness == Brightness.light ? Colors.white : Colors.black,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
@@ -119,10 +111,22 @@ class _AskAnythingTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: _kPurple.withValues(alpha: 0.25),
+            blurRadius: 0,
+            offset: const Offset(4, 4),
+          ),
+        ],
+      ),
+      child: Card(
       margin: EdgeInsets.zero,
-      color: Colors.white,
+      color: theme.brightness == Brightness.light ? Colors.white : Colors.black,
       elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: onTap ?? () => Navigator.of(context).push(
@@ -175,6 +179,42 @@ class _AskAnythingTile extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    ),
+    );
+  }
+}
+
+class _SectionHeaderTile extends StatelessWidget {
+  const _SectionHeaderTile({required this.theme});
+
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.brightness == Brightness.light ? Colors.white : Colors.black,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'My Account',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Live data - Coming soon',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -236,14 +276,17 @@ class _IsaFinancingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final statusColor = (_status == IsaStatus.contractSigned && theme.brightness == Brightness.dark)
+        ? _kGreen
+        : _status.color;
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        color: theme.brightness == Brightness.light ? Colors.white : Colors.black,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: _kDarkGreen.withValues(alpha: 0.18),
+            color: (theme.brightness == Brightness.light ? _kDarkGreen : _kGreen).withValues(alpha: 0.18),
             blurRadius: 0,
             offset: const Offset(4, 4),
           ),
@@ -276,18 +319,18 @@ class _IsaFinancingCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: _status.color.withValues(alpha: 0.12),
+                    color: statusColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(_status.icon, size: 13, color: _status.color),
+                      Icon(_status.icon, size: 13, color: statusColor),
                       const SizedBox(width: 4),
                       Text(
                         _status.label,
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: _status.color,
+                          color: statusColor,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -360,11 +403,11 @@ class _IsaInstalmentsCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        color: theme.brightness == Brightness.light ? Colors.white : Colors.black,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: _kDarkGreen.withValues(alpha: 0.18),
+            color: (theme.brightness == Brightness.light ? _kDarkGreen : _kGreen).withValues(alpha: 0.18),
             blurRadius: 0,
             offset: const Offset(4, 4),
           ),

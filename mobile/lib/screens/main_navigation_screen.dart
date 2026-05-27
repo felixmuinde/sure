@@ -66,11 +66,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     ];
   }
 
-  PreferredSizeWidget _buildTopBar(AuthProvider authProvider) {
+  PreferredSizeWidget _buildTopBar(AuthProvider authProvider, Color bg) {
     return AppBar(
       automaticallyImplyLeading: false,
       toolbarHeight: 60,
       elevation: 0,
+      scrolledUnderElevation: 0,
+      backgroundColor: bg,
       titleSpacing: 0,
       centerTitle: false,
       actionsPadding: EdgeInsets.zero,
@@ -174,13 +176,17 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           _currentIndex = 0;
         }
 
+        final brightness = Theme.of(context).brightness;
+        final bg = brightness == Brightness.light ? Colors.white : Colors.black;
         return Scaffold(
-          appBar: _buildTopBar(authProvider),
+          backgroundColor: bg,
+          appBar: _buildTopBar(authProvider, bg),
           body: IndexedStack(
             index: _currentIndex,
             children: screens,
           ),
           bottomNavigationBar: NavigationBar(
+            backgroundColor: bg,
             selectedIndex: bottomNavIndex,
             onDestinationSelected: (index) {
               _handleDestinationSelected(index, authProvider);

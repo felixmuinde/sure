@@ -10,6 +10,9 @@ import '../models/message.dart';
 import '../constants/suggested_questions.dart';
 import '../widgets/typing_indicator.dart';
 
+const Color _kGreen     = Color(0xFF84BD00);
+const Color _kDarkGreen = Color(0xFF1F4834);
+
 class _SendMessageIntent extends Intent {
   const _SendMessageIntent();
 }
@@ -258,10 +261,15 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final bg = theme.brightness == Brightness.light ? Colors.white : Colors.black;
 
     return Scaffold(
+      backgroundColor: bg,
       appBar: AppBar(
+        backgroundColor: bg,
+        scrolledUnderElevation: 0,
         title: Consumer<ChatProvider>(
           builder: (context, chatProvider, _) {
             final title = chatProvider.currentChat?.title ?? 'New Conversation';
@@ -377,14 +385,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, -2),
-                    ),
-                  ],
+                  color: bg,
                 ),
                 child: Shortcuts(
                   shortcuts: const {
@@ -409,6 +410,15 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                               hintText: 'Type a message...',
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(24),
+                                borderSide: BorderSide.none,
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(24),
+                                borderSide: BorderSide.none,
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(24),
+                                borderSide: BorderSide.none,
                               ),
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16,
@@ -589,7 +599,8 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final name = (firstName ?? '').trim();
     final greeting = name.isNotEmpty ? 'Hi $name, how can I help?' : 'How can I help?';
 
@@ -599,7 +610,7 @@ class _EmptyState extends StatelessWidget {
         const SizedBox(height: 32),
         Text(
           greeting,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+          style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
           textAlign: TextAlign.center,
@@ -608,17 +619,31 @@ class _EmptyState extends StatelessWidget {
         ...suggestedQuestions.map(
           (q) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: OutlinedButton.icon(
-              onPressed: isSending ? null : () => onQuestionTap(q.text),
-              icon: Icon(q.icon, size: 20),
-              label: Text(q.text, textAlign: TextAlign.left),
-              style: OutlinedButton.styleFrom(
-                alignment: Alignment.centerLeft,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: (theme.brightness == Brightness.light ? _kDarkGreen : _kGreen).withValues(alpha: 0.18),
+                    blurRadius: 0,
+                    offset: const Offset(4, 4),
+                  ),
+                ],
+              ),
+              child: OutlinedButton.icon(
+                onPressed: isSending ? null : () => onQuestionTap(q.text),
+                icon: Icon(q.icon, size: 20),
+                label: Text(q.text, textAlign: TextAlign.left),
+                style: OutlinedButton.styleFrom(
+                  alignment: Alignment.centerLeft,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  backgroundColor: theme.brightness == Brightness.light ? Colors.white : Colors.black,
+                  foregroundColor: colorScheme.onSurface,
+                  side: BorderSide.none,
                 ),
-                foregroundColor: colorScheme.onSurface,
               ),
             ),
           ),

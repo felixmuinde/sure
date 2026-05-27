@@ -153,12 +153,17 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final bg = theme.brightness == Brightness.light ? Colors.white : Colors.black;
 
     return Scaffold(
+      backgroundColor: bg,
       appBar: AppBar(
         title: const Text('Chats'),
         centerTitle: false,
+        backgroundColor: bg,
+        scrolledUnderElevation: 0,
         actions: [
           if (_isSelectionMode) ...[
             IconButton(

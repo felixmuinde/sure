@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sure Mobile — Theme & Design System</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:      #84BD00;
+      --dark-green: #1F4834;
+      --purple:     #986EF9;
+      --black:      #000000;
+      --white:      #FFFFFF;
+      --grey-100:   #F5F5F5;
+      --grey-200:   #E0E0E0;
+      --grey-700:   #616161;
+      --radius:     12px;
+      --shadow-offset: 4px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--grey-100);
+      color: #111;
+      padding: 40px 24px;
+      max-width: 900px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    header {
+      margin-bottom: 48px;
+    }
+
+    header h1 {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    header p {
+      color: var(--grey-700);
+      margin-top: 6px;
+      font-size: 15px;
+    }
+
+    header .branch-tag {
+      display: inline-block;
+      margin-top: 10px;
+      background: var(--dark-green);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      letter-spacing: 0.3px;
+    }
+
+    section {
+      margin-bottom: 48px;
+    }
+
+    h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--grey-200);
+    }
+
+    h3 {
+      font-size: 15px;
+      font-weight: 700;
+      margin: 20px 0 8px;
+      color: var(--dark-green);
+    }
+
+    p, li { font-size: 14px; color: #333; }
+    ul { padding-left: 20px; }
+    li { margin-bottom: 4px; }
+
+    /* ── Color swatches ── */
+    .swatches {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .swatch {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .swatch-block {
+      width: 64px;
+      height: 64px;
+      border-radius: 10px;
+      border: 1px solid rgba(0,0,0,0.08);
+    }
+
+    .swatch span {
+      font-size: 11px;
+      font-weight: 600;
+      color: #555;
+      text-align: center;
+    }
+
+    /* ── Theme preview strips ── */
+    .theme-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 12px;
+    }
+
+    .theme-panel {
+      border-radius: var(--radius);
+      padding: 20px;
+      border: 1px solid var(--grey-200);
+    }
+
+    .theme-panel.light { background: var(--white); }
+    .theme-panel.dark  { background: var(--black); }
+
+    .theme-panel .label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 14px;
+    }
+
+    .theme-panel.light .label { color: #999; }
+    .theme-panel.dark  .label { color: #555; }
+
+    /* ── Card mock-ups ── */
+    .mock-card {
+      border-radius: var(--radius);
+      padding: 16px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    /* Light cards */
+    .light .mock-card.green-shadow {
+      background: var(--white);
+      box-shadow: 4px 4px 0 rgba(31,72,52,0.18);
+      color: #111;
+    }
+    .light .mock-card.purple-shadow {
+      background: var(--white);
+      box-shadow: 4px 4px 0 rgba(152,110,249,0.25);
+      color: #111;
+    }
+    .light .mock-card.no-shadow {
+      background: var(--white);
+      color: #111;
+    }
+
+    /* Dark cards */
+    .dark .mock-card.green-shadow {
+      background: var(--black);
+      box-shadow: 4px 4px 0 rgba(132,189,0,0.18);
+      color: #fff;
+    }
+    .dark .mock-card.purple-shadow {
+      background: var(--black);
+      box-shadow: 4px 4px 0 rgba(152,110,249,0.25);
+      color: #fff;
+    }
+    .dark .mock-card.no-shadow {
+      background: var(--black);
+      color: #fff;
+    }
+
+    /* Suggested question chips */
+    .light .mock-chip {
+      display: inline-block;
+      background: var(--white);
+      box-shadow: 4px 4px 0 rgba(31,72,52,0.18);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 13px;
+      color: #111;
+      margin: 4px 4px 4px 0;
+    }
+
+    .dark .mock-chip {
+      display: inline-block;
+      background: var(--black);
+      box-shadow: 4px 4px 0 rgba(132,189,0,0.18);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 13px;
+      color: #fff;
+      margin: 4px 4px 4px 0;
+    }
+
+    /* ── Rule table ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 12px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--grey-200);
+    }
+
+    th {
+      background: var(--grey-100);
+      font-weight: 700;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #666;
+    }
+
+    td code {
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 12px;
+      background: var(--grey-100);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: var(--dark-green);
+    }
+
+    /* ── File pill ── */
+    .file-pill {
+      display: inline-block;
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 11px;
+      background: var(--grey-200);
+      color: #444;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin: 2px 2px 6px 0;
+    }
+
+    /* ── Change log ── */
+    .change-entry {
+      background: var(--white);
+      border: 1px solid var(--grey-200);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 12px;
+    }
+
+    .change-entry h4 {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 2px 7px;
+      border-radius: 20px;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+
+    .tag.visual  { background: #E8F5E9; color: #2E7D32; }
+    .tag.theme   { background: #EDE7F6; color: #512DA8; }
+    .tag.ux      { background: #E3F2FD; color: #1565C0; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Sure Mobile — Theme &amp; Design System</h1>
+  <p>Documents the visual language, surface rules, and shadow system applied across the Companion mobile app.</p>
+  <span class="branch-tag">feat/insights-my-account-card</span>
+</header>
+
+<!-- ── 1. Color Palette ───────────────────────────────────────────── -->
+<section>
+  <h2>1. Color Palette</h2>
+  <p>Brand constants defined at file scope. All values are used exclusively — do not substitute with Material theme colors for these roles.</p>
+
+  <div class="swatches">
+    <div class="swatch">
+      <div class="swatch-block" style="background:#84BD00;"></div>
+      <span>_kGreen<br>#84BD00</span>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#1F4834;"></div>
+      <span>_kDarkGreen<br>#1F4834</span>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#986EF9;"></div>
+      <span>_kPurple<br>#986EF9</span>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#FFFFFF; border: 1px solid #ddd;"></div>
+      <span>Surface Light<br>#FFFFFF</span>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#000000;"></div>
+      <span>Surface Dark<br>#000000</span>
+    </div>
+  </div>
+</section>
+
+<!-- ── 2. Surface Backgrounds ────────────────────────────────────── -->
+<section>
+  <h2>2. Surface Backgrounds</h2>
+  <p>All screens and card surfaces use <strong>absolute white in light mode</strong> and <strong>absolute black in dark mode</strong>. Material's <code>colorScheme.surface</code> is intentionally not used — it produces a tinted off-white/off-black that conflicts with the brand aesthetic.</p>
+
+  <table>
+    <thead>
+      <tr><th>Component</th><th>Light</th><th>Dark</th><th>Flutter value</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Scaffold background (all screens)</td><td>White</td><td>Black</td><td><code>Colors.white / Colors.black</code></td></tr>
+      <tr><td>Bottom navigation bar</td><td>White</td><td>Black</td><td><code>Colors.white / Colors.black</code></td></tr>
+      <tr><td>Card / tile surfaces</td><td>White</td><td>Black</td><td><code>Colors.white / Colors.black</code></td></tr>
+      <tr><td>Chat input bar</td><td>White</td><td>Black</td><td>Matches scaffold, no shadow</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Pattern</h3>
+  <p>Use the following expression everywhere a surface color is needed:</p>
+  <pre style="background:#f0f0f0;padding:12px 16px;border-radius:8px;font-size:13px;margin-top:8px;overflow:auto;">
+theme.brightness == Brightness.light ? Colors.white : Colors.black</pre>
+</section>
+
+<!-- ── 3. Shadow System ───────────────────────────────────────────── -->
+<section>
+  <h2>3. Shadow System</h2>
+  <p>Shadows are <strong>hard diagonal</strong> (blurRadius: 0, offset: 4, 4). No soft/blurred drop shadows. Shadow color adapts to theme to maintain contrast and brand feel.</p>
+
+  <table>
+    <thead>
+      <tr><th>Element</th><th>Light shadow color</th><th>Dark shadow color</th><th>Alpha</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>ISA Financing card</td>
+        <td><span style="display:inline-block;width:12px;height:12px;background:#1F4834;border-radius:2px;vertical-align:middle;margin-right:4px;"></span> _kDarkGreen</td>
+        <td><span style="display:inline-block;width:12px;height:12px;background:#84BD00;border-radius:2px;vertical-align:middle;margin-right:4px;"></span> _kGreen</td>
+        <td>0.18</td>
+      </tr>
+      <tr>
+        <td>ISA Instalments card</td>
+        <td><span style="display:inline-block;width:12px;height:12px;background:#1F4834;border-radius:2px;vertical-align:middle;margin-right:4px;"></span> _kDarkGreen</td>
+        <td><span style="display:inline-block;width:12px;height:12px;background:#84BD00;border-radius:2px;vertical-align:middle;margin-right:4px;"></span> _kGreen</td>
+        <td>0.18</td>
+      </tr>
+      <tr>
+        <td>Ask me anything tile</td>
+        <td><span style="display:inline-block;width:12px;height:12px;background:#986EF9;border-radius:2px;vertical-align:middle;margin-right:4px;"></span> _kPurple</td>
+        <td><span style="display:inline-block;width:12px;height:12px;background:#986EF9;border-radius:2px;vertical-align:middle;margin-right:4px;"></span> _kPurple</td>
+        <td>0.25</td>
+      </tr>
+      <tr>
+        <td>Suggested questions (chat)</td>
+        <td><span style="display:inline-block;width:12px;height:12px;background:#1F4834;border-radius:2px;vertical-align:middle;margin-right:4px;"></span> _kDarkGreen</td>
+        <td><span style="display:inline-block;width:12px;height:12px;background:#84BD00;border-radius:2px;vertical-align:middle;margin-right:4px;"></span> _kGreen</td>
+        <td>0.18</td>
+      </tr>
+      <tr>
+        <td>Greeting card</td>
+        <td colspan="2" style="text-align:center; color:#999;">No shadow</td>
+        <td>—</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Flutter snippet</h3>
+  <pre style="background:#f0f0f0;padding:12px 16px;border-radius:8px;font-size:13px;margin-top:8px;overflow:auto;">
+BoxShadow(
+  color: (theme.brightness == Brightness.light
+      ? _kDarkGreen : _kGreen).withValues(alpha: 0.18),
+  blurRadius: 0,
+  offset: const Offset(4, 4),
+)</pre>
+
+  <h3>Live preview</h3>
+  <div class="theme-pair">
+    <div class="theme-panel light">
+      <div class="label">Light mode</div>
+      <div class="mock-card green-shadow">ISA Financing / Instalments</div>
+      <div class="mock-card purple-shadow">Ask me anything</div>
+      <div class="mock-card no-shadow">Greeting (Hi, Jack!)</div>
+      <div class="mock-chip">How do instalments work?</div>
+      <div class="mock-chip">What is an ISA?</div>
+    </div>
+    <div class="theme-panel dark">
+      <div class="label">Dark mode</div>
+      <div class="mock-card green-shadow">ISA Financing / Instalments</div>
+      <div class="mock-card purple-shadow">Ask me anything</div>
+      <div class="mock-card no-shadow">Greeting (Hi, Jack!)</div>
+      <div class="mock-chip">How do instalments work?</div>
+      <div class="mock-chip">What is an ISA?</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 4. Screen-by-screen summary ──────────────────────────────── -->
+<section>
+  <h2>4. Screen-by-screen Changes</h2>
+
+  <div class="change-entry">
+    <h4><span class="tag visual">Visual</span><span class="tag theme">Theme</span> My Account / Insights</h4>
+    <span class="file-pill">intro_screen_stub.dart</span>
+    <ul>
+      <li>Scaffold background: pure white (light) / pure black (dark)</li>
+      <li>All tile surfaces: white/black, not <code>colorScheme.surface</code></li>
+      <li>ISA Financing &amp; Instalments cards: <code>_kDarkGreen</code> diagonal shadow in light, <code>_kGreen</code> in dark</li>
+      <li>Ask me anything tile: <code>_kPurple</code> diagonal shadow (both modes)</li>
+      <li>Greeting card: no shadow — purely typographic, no elevation cue needed</li>
+      <li>Placeholder values shown as <em>Coming Soon</em> (italic) — not blurred</li>
+      <li><strong>ISA status badge "Graduated" (<code>contractSigned</code>)</strong>: uses <code>_kDarkGreen</code> in light mode, switches to <code>_kGreen</code> in dark mode for visibility</li>
+      <li><strong>"My Account" section header</strong> moved into its own <code>_SectionHeaderTile</code> — white/black surface, no shadow, internal padding of 24px to align text with greeting card and ISA card content</li>
+      <li><strong>TODO</strong>: "Ask me anything" tile should open a new chat by default when tapped — currently falls back to <code>ChatConversationScreen(chatId: null)</code> but should be wired to the parent <code>onStartChat</code> callback consistently so it navigates to the Chat tab rather than pushing a new route</li>
+    </ul>
+  </div>
+
+  <div class="change-entry">
+    <h4><span class="tag visual">Visual</span><span class="tag theme">Theme</span> Chat / Assistant</h4>
+    <span class="file-pill">chat_conversation_screen.dart</span>
+    <ul>
+      <li>Scaffold background: white/black</li>
+      <li>Message input bar: white/black, shadow removed</li>
+      <li>Suggested questions: white/black surface, <code>_kDarkGreen</code>/<code>_kGreen</code> diagonal shadow, no border, no tint</li>
+      <li>Message input box: border removed on all states (<code>border</code>, <code>enabledBorder</code>, <code>focusedBorder</code> all set to <code>BorderSide.none</code>) — fill color remains from theme</li>
+    </ul>
+  </div>
+
+  <div class="change-entry">
+    <h4><span class="tag theme">Theme</span> Chat List</h4>
+    <span class="file-pill">chat_list_screen.dart</span>
+    <ul>
+      <li>Scaffold background: white/black</li>
+    </ul>
+  </div>
+
+  <div class="change-entry">
+    <h4><span class="tag theme">Theme</span> Settings</h4>
+    <span class="file-pill">settings_screen.dart</span>
+    <ul>
+      <li>Scaffold background: white/black</li>
+    </ul>
+  </div>
+
+  <div class="change-entry">
+    <h4><span class="tag theme">Theme</span> Main Navigation</h4>
+    <span class="file-pill">main_navigation_screen.dart</span>
+    <ul>
+      <li>Scaffold background: white/black</li>
+      <li>Bottom <code>NavigationBar</code> background: white/black (was using Material default tint)</li>
+      <li>AppBar background: white/black, <code>scrolledUnderElevation: 0</code> — prevents tint change when content scrolls under the bar</li>
+    </ul>
+  </div>
+
+  <div class="change-entry">
+    <h4><span class="tag theme">Theme</span> AppBar scroll tint — all screens</h4>
+    <span class="file-pill">main_navigation_screen.dart</span>
+    <span class="file-pill">chat_conversation_screen.dart</span>
+    <span class="file-pill">chat_list_screen.dart</span>
+    <ul>
+      <li>All AppBars set <code>backgroundColor: bg</code> and <code>scrolledUnderElevation: 0</code></li>
+      <li>Material 3 by default applies a tinted overlay when a scrollable body scrolls under the AppBar — this disables that behaviour to maintain the pure white/black surface across all scroll positions</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ── 5. Rules & Don'ts ─────────────────────────────────────────── -->
+<section>
+  <h2>5. Rules</h2>
+  <table>
+    <thead>
+      <tr><th>Do</th><th>Don't</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Use <code>Colors.white / Colors.black</code> for surfaces</td>
+        <td>Use <code>colorScheme.surface</code> or <code>colorScheme.background</code> for card/scaffold backgrounds</td>
+      </tr>
+      <tr>
+        <td>Use hard diagonal shadows (<code>blurRadius: 0, offset: Offset(4,4)</code>)</td>
+        <td>Use soft/blurred shadows (<code>blurRadius &gt; 0</code>) on branded tiles</td>
+      </tr>
+      <tr>
+        <td>Switch shadow color with <code>theme.brightness</code> (dark → green, light → dark green)</td>
+        <td>Hardcode a single shadow color regardless of theme</td>
+      </tr>
+      <tr>
+        <td>Use <code>_kPurple</code> for AI/chat accent (Ask me anything, chat icon)</td>
+        <td>Use purple on ISA financial data elements</td>
+      </tr>
+      <tr>
+        <td>Use <code>_kGreen</code> / <code>_kDarkGreen</code> for ISA / financial data elements</td>
+        <td>Mix purple and green shadow on the same card</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<footer style="margin-top:48px; padding-top:16px; border-top:1px solid var(--grey-200); font-size:12px; color:#aaa;">
+  Sure Companion Mobile — Theme documentation · Generated on branch <code>feat/insights-my-account-card</code>
+</footer>
+
+</body>
+</html>
