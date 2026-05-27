@@ -4,6 +4,10 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'chat_conversation_screen.dart';
 
+const Color _kGreen  = Color(0xFF84BD00);
+const Color _kDarkGreen = Color(0xFF1F4834);
+const Color _kPurple = Color(0xFF986EF9);
+
 class InsightsPreviewScreen extends StatefulWidget {
   const InsightsPreviewScreen({super.key, this.onStartChat});
 
@@ -40,12 +44,10 @@ class _AccountSummaryView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _AssistantCtaCard(
-            firstName: firstName,
-            onTap: onStartChat,
-            theme: theme,
-          ),
-          const SizedBox(height: 6),
+          _GreetingCard(firstName: firstName, theme: theme),
+          const SizedBox(height: 8),
+          _AskAnythingTile(onTap: onStartChat, theme: theme),
+          const SizedBox(height: 20),
           Text(
             'My Account',
             style: theme.textTheme.titleLarge?.copyWith(
@@ -54,7 +56,7 @@ class _AccountSummaryView extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Live data coming soon',
+            'Live data -',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -69,76 +71,108 @@ class _AccountSummaryView extends StatelessWidget {
   }
 }
 
-class _AssistantCtaCard extends StatelessWidget {
-  const _AssistantCtaCard({
-    required this.firstName,
-    required this.theme,
-    this.onTap,
-  });
+class _GreetingCard extends StatelessWidget {
+  const _GreetingCard({required this.firstName, required this.theme});
 
   final String firstName;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Hi, $firstName!',
+              style: theme.textTheme.displaySmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: -1,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Your partner from learning to earning.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AskAnythingTile extends StatelessWidget {
+  const _AskAnythingTile({required this.theme, this.onTap});
+
   final ThemeData theme;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final isDark = theme.brightness == Brightness.dark;
-    final gradientStart =
-        isDark ? const Color(0xFF1B2A1E) : const Color(0xFFE8F5EE);
-    final gradientEnd =
-        isDark ? const Color(0xFF1A1A2E) : const Color(0xFFEEF0FB);
-
     return Card(
       margin: EdgeInsets.zero,
-      clipBehavior: Clip.antiAlias,
+      color: Colors.white,
+      elevation: 0,
       child: InkWell(
-        onTap: onTap,
-        child: Ink(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [gradientStart, gradientEnd],
-            ),
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap ?? () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => const ChatConversationScreen(chatId: null),
           ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Hi, $firstName!',
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
-                  ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: _kPurple.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  'Ask me anything about your finances — I\'m here to help.',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    height: 1.4,
-                  ),
+                child: const Icon(
+                  Icons.chat_bubble_outline_rounded,
+                  color: _kPurple,
+                  size: 20,
                 ),
-                const SizedBox(height: 20),
-                FilledButton.icon(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const ChatConversationScreen(chatId: null),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Ask me anything',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: _kPurple,
+                      ),
                     ),
-                  ),
-                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
-                  label: const Text('Start a conversation'),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
+                    Text(
+                      'Get instant answers about your ISA',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ],
           ),
         ),
       ),
@@ -158,7 +192,7 @@ enum IsaStatus {
 extension IsaStatusDisplay on IsaStatus {
   String get label {
     switch (this) {
-      case IsaStatus.contractSigned: return 'Contract Signed';
+      case IsaStatus.contractSigned: return 'Graduated';
       case IsaStatus.repaying:       return 'Repaying';
       case IsaStatus.paused:         return 'Paused';
       case IsaStatus.serviceFeeMode: return 'Service Fee Mode';
@@ -169,7 +203,7 @@ extension IsaStatusDisplay on IsaStatus {
 
   Color get color {
     switch (this) {
-      case IsaStatus.contractSigned: return const Color(0xFF2196F3); // blue
+      case IsaStatus.contractSigned: return _kDarkGreen;
       case IsaStatus.repaying:       return const Color(0xFF10A861); // green
       case IsaStatus.paused:         return const Color(0xFFFFA726); // amber
       case IsaStatus.serviceFeeMode: return const Color(0xFFFFA726); // amber
@@ -195,35 +229,41 @@ class _IsaFinancingCard extends StatelessWidget {
 
   final ThemeData theme;
 
-  static const _green = Color(0xFF10A861);
+  // Placeholder values — will be replaced with real data
+  static const _amountPaid    = 'KSh 45,000';
+  static const _totalFinanced = 'KSh 268,240';
+  static const _status        = IsaStatus.contractSigned;
 
   @override
   Widget build(BuildContext context) {
-    // Placeholder values — will be replaced with real data
-    // Based on Chancen Kenya ISA contract: max financing KES 268,240,
-    // max repayment = financed amount × 2.6 (160% cap at year 8)
-    const totalFinanced = 'KSh 268,240';
-    const maxPayable = 'KSh 697,424';
-    const amountPaid = 'KSh 45,000';
-    const progress = 45000 / 697424; // ~6.5%
-    const status = IsaStatus.contractSigned;
 
-    return Card(
-      margin: EdgeInsets.zero,
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: _kDarkGreen.withValues(alpha: 0.18),
+            blurRadius: 0,
+            offset: const Offset(4, 4),
+          ),
+        ],
+      ),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header row
             Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: _green.withValues(alpha: 0.12),
+                    color: _kGreen.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(_IsaIcons.financing, color: _green, size: 18),
+                  child: const Icon(_IsaIcons.financing, color: _kGreen, size: 18),
                 ),
                 const SizedBox(width: 12),
                 Text(
@@ -236,18 +276,18 @@ class _IsaFinancingCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: status.color.withValues(alpha: 0.12),
+                    color: _status.color.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(status.icon, size: 13, color: status.color),
+                      Icon(_status.icon, size: 13, color: _status.color),
                       const SizedBox(width: 4),
                       Text(
-                        status.label,
+                        _status.label,
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: status.color,
+                          color: _status.color,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -257,47 +297,32 @@ class _IsaFinancingCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 20),
+            // Hero metric
             Text(
-              'Total Financed',
+              'Repayments Received',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 4),
             Text(
-              totalFinanced,
+              'Coming Soon',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w800,
-                color: null,
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Progress bar
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: progress,
-                minHeight: 8,
-                backgroundColor: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
-                valueColor: const AlwaysStoppedAnimation<Color>(_green),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Amount paid towards maximum payable',
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+                fontStyle: FontStyle.italic,
               ),
             ),
             const SizedBox(height: 20),
             Divider(height: 1, color: theme.dividerColor),
             const SizedBox(height: 16),
+            // Bottom stats: left fixed, right toggleable
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: _StatItem(
-                    label: 'Amount Paid\nTo Date',
-                    value: amountPaid,
+                    label: 'Repayments\nReceived',
+                    value: _amountPaid,
                     theme: theme,
                     align: CrossAxisAlignment.start,
                   ),
@@ -305,8 +330,8 @@ class _IsaFinancingCard extends StatelessWidget {
                 VerticalDivider(width: 1, thickness: 1, color: theme.dividerColor),
                 Expanded(
                   child: _StatItem(
-                    label: 'Maximum\nAmount Payable',
-                    value: maxPayable,
+                    label: 'Total\nFinanced',
+                    value: _totalFinanced,
                     theme: theme,
                     align: CrossAxisAlignment.end,
                   ),
@@ -325,8 +350,6 @@ class _IsaInstalmentsCard extends StatelessWidget {
 
   final ThemeData theme;
 
-  static const _green = Color(0xFF10A861);
-
   @override
   Widget build(BuildContext context) {
     // Placeholder values — will be replaced with real data
@@ -335,13 +358,23 @@ class _IsaInstalmentsCard extends StatelessWidget {
     const maxInstalments = 108;
     const progress = 9 / 108;
 
-    return Card(
-      margin: EdgeInsets.zero,
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: _kDarkGreen.withValues(alpha: 0.18),
+            blurRadius: 0,
+            offset: const Offset(4, 4),
+          ),
+        ],
+      ),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Row(
           children: [
-            const _CircularProgress(progress: progress),
+            const _CircularProgress(progress: progress, color: _kGreen),
             const SizedBox(width: 20),
             Expanded(
               child: Column(
@@ -352,10 +385,10 @@ class _IsaInstalmentsCard extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: _green.withValues(alpha: 0.12),
+                          color: _kGreen.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(_IsaIcons.instalments, color: _green, size: 18),
+                        child: const Icon(_IsaIcons.instalments, color: _kGreen, size: 18),
                       ),
                       const SizedBox(width: 10),
                       Text(
@@ -426,9 +459,10 @@ class _StatItem extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            value,
+            'Coming Soon',
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
+              fontStyle: FontStyle.italic,
             ),
           ),
         ],
@@ -438,9 +472,10 @@ class _StatItem extends StatelessWidget {
 }
 
 class _CircularProgress extends StatelessWidget {
-  const _CircularProgress({required this.progress});
+  const _CircularProgress({required this.progress, this.color = _kGreen});
 
   final double progress;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -452,12 +487,14 @@ class _CircularProgress extends StatelessWidget {
         painter: _CircularProgressPainter(
           progress: progress,
           trackColor: theme.colorScheme.outlineVariant,
+          progressColor: color,
         ),
         child: Center(
           child: Text(
-            '${(progress * 100).round()}%',
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
+            'Soon',
+            style: theme.textTheme.labelSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              fontStyle: FontStyle.italic,
             ),
           ),
         ),
@@ -470,13 +507,14 @@ class _CircularProgressPainter extends CustomPainter {
   _CircularProgressPainter({
     required this.progress,
     required this.trackColor,
+    required this.progressColor,
   });
 
   final double progress;
   final Color trackColor;
+  final Color progressColor;
 
   static const _strokeWidth = 8.0;
-  static const _progressColor = Color(0xFF10A861);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -491,7 +529,7 @@ class _CircularProgressPainter extends CustomPainter {
     canvas.drawCircle(center, radius, trackPaint);
 
     final progressPaint = Paint()
-      ..color = _progressColor
+      ..color = progressColor
       ..strokeWidth = _strokeWidth
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
@@ -509,3 +547,4 @@ class _CircularProgressPainter extends CustomPainter {
   bool shouldRepaint(_CircularProgressPainter old) =>
       old.progress != progress || old.trackColor != trackColor;
 }
+
