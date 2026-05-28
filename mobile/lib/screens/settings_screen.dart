@@ -421,8 +421,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final authProvider = Provider.of<AuthProvider>(context);
+    final bg = Theme.of(context).brightness == Brightness.light ? Colors.white : Colors.black;
 
     return Scaffold(
+      backgroundColor: bg,
       body: ListView(
         children: [
           // User info section
