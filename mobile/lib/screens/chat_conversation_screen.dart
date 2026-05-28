@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -544,7 +545,8 @@ class _MessageBubble extends StatelessWidget {
                             return Image.asset(config.uri.toString());
                           },
                         ),
-                      if (message.toolCalls != null &&
+                      if (kDebugMode &&
+                          message.toolCalls != null &&
                           message.toolCalls!.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.only(top: 8),
