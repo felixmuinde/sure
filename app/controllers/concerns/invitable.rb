@@ -15,7 +15,7 @@ module Invitable
       end
     end
 
-    def assign_signup_family_and_role(user, invitation: nil)
+    def assign_signup_family_and_role(user, invitation: nil, new_family_fallback_role: :admin)
       if invitation.present?
         user.family = invitation.family
         user.role = invitation.role
@@ -25,8 +25,17 @@ module Invitable
         user.role = :member
       else
         user.family = Family.new
-        user.role = User.role_for_new_family_creator
+        user.role = User.role_for_new_family_creator(fallback_role: new_family_fallback_role)
       end
+    end
+
+    def sso_provider_default_role(provider_name)
+      provider_config = Rails.configuration.x.auth.sso_providers&.find do |provider|
+        provider[:name] == provider_name || provider[:id] == provider_name
+      end
+      settings = provider_config&.dig(:settings)
+
+      settings&.dig(:default_role) || settings&.dig("default_role")
     end
 
     def invite_only_default_family

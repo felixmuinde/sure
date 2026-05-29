@@ -195,6 +195,21 @@ class OidcAccountsControllerTest < ActionController::TestCase
     assert_equal new_user_auth["uid"], oidc_identity.uid
   end
 
+  test "create_user uses provider default role for new family JIT users" do
+    Rails.configuration.x.auth.stubs(:sso_providers).returns([
+      { name: "openid_connect", settings: { default_role: "guest" } }
+    ])
+    session[:pending_oidc_auth] = new_user_auth
+
+    assert_difference([ "User.count", "OidcIdentity.count", "Family.count" ], 1) do
+      post :create_user
+    end
+
+    assert_redirected_to root_path
+    new_user = User.find_by!(email: new_user_auth["email"])
+    assert_equal "guest", new_user.role
+  end
+
   test "create_user joins configured invite-only default family as member" do
     default_family = families(:empty)
     Setting.onboarding_state = "invite_only"

@@ -759,6 +759,36 @@ class Api::V1::AuthControllerTest < ActionDispatch::IntegrationTest
     assert_nil Rails.cache.read("mobile_sso_link:#{linking_code}")
   end
 
+  test "sso_create_account uses provider default role for new family JIT users" do
+    Rails.configuration.x.auth.stubs(:sso_providers).returns([
+      { name: "google_oauth2", settings: { default_role: "member" } }
+    ])
+
+    linking_code = SecureRandom.urlsafe_base64(32)
+    Rails.cache.write("mobile_sso_link:#{linking_code}", {
+      provider: "google_oauth2",
+      uid: "google-uid-provider-role",
+      email: "providerrole@example.com",
+      first_name: "Provider",
+      last_name: "Role",
+      name: "Provider Role",
+      device_info: @device_info.stringify_keys,
+      allow_account_creation: true
+    }, expires_in: 10.minutes)
+
+    assert_difference([ "User.count", "OidcIdentity.count", "Family.count" ], 1) do
+      post "/api/v1/auth/sso_create_account", params: {
+        linking_code: linking_code,
+        first_name: "Provider",
+        last_name: "Role"
+      }
+    end
+
+    assert_response :success
+    user = User.find_by!(email: "providerrole@example.com")
+    assert_equal "member", user.role
+  end
+
   test "sso_create_account joins configured invite-only default family as member" do
     default_family = families(:empty)
     Setting.onboarding_state = "invite_only"

@@ -201,7 +201,11 @@ module Api
           skip_password_validation: true
         )
 
-        assign_signup_family_and_role(user, invitation: invitation)
+        assign_signup_family_and_role(
+          user,
+          invitation: invitation,
+          new_family_fallback_role: sso_provider_default_role(cached[:provider]) || :admin
+        )
 
         if user.save
           # Mark invitation as accepted if one was used

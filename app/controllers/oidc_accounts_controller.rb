@@ -121,7 +121,11 @@ class OidcAccountsController < ApplicationController
       skip_password_validation: true
     )
 
-    assign_signup_family_and_role(@user, invitation: invitation)
+    assign_signup_family_and_role(
+      @user,
+      invitation: invitation,
+      new_family_fallback_role: sso_provider_default_role(@pending_auth["provider"]) || :admin
+    )
 
     if @user.save
       # Create the OIDC (or other SSO) identity
