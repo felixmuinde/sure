@@ -173,6 +173,28 @@ class Api::V1::AuthControllerTest < ActionDispatch::IntegrationTest
     assert new_user.family.present?
   end
 
+  test "signup requires invite code when invite-only default family id is stale" do
+    with_self_hosting do
+      Setting.onboarding_state = "invite_only"
+      Setting.invite_only_default_family_id = SecureRandom.uuid
+
+      assert_no_difference([ "User.count", "Family.count" ]) do
+        post "/api/v1/auth/signup", params: {
+          user: {
+            email: "staledefault@example.com",
+            password: "SecurePass123!",
+            first_name: "Stale",
+            last_name: "Default"
+          },
+          device: @device_info
+        }
+      end
+
+      assert_response :forbidden
+      assert_equal "Invite code is required", JSON.parse(response.body)["error"]
+    end
+  end
+
   test "signup joins configured invite-only default family as member" do
     default_family = families(:empty)
     Setting.onboarding_state = "invite_only"

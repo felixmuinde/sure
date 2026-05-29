@@ -9,7 +9,7 @@ module Invitable
     def invite_code_required?
       return false if @invitation.present?
       if self_hosted?
-        Setting.onboarding_state == "invite_only" && Setting.invite_only_default_family_id.blank?
+        Setting.onboarding_state == "invite_only" && invite_only_default_family.blank?
       else
         ENV["REQUIRE_INVITE_CODE"] == "true"
       end
@@ -23,6 +23,8 @@ module Invitable
       elsif (default_family = invite_only_default_family)
         user.family = default_family
         user.role = :member
+      elsif Setting.onboarding_state == "invite_only" && Setting.invite_only_default_family_id.present?
+        nil
       else
         user.family = Family.new
         user.role = User.role_for_new_family_creator(fallback_role: new_family_fallback_role)
