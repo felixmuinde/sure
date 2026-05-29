@@ -121,20 +121,7 @@ class OidcAccountsController < ApplicationController
       skip_password_validation: true
     )
 
-    if invitation.present?
-      # Accept the pending invitation: join the existing family
-      @user.family_id = invitation.family_id
-      @user.role = invitation.role
-    else
-      # Create new family for this user
-      @user.family = Family.new
-
-      # Use provider-configured default role, or fall back to admin for family creators
-      # First user of an instance always becomes super_admin regardless of provider config
-      provider_config = Rails.configuration.x.auth.sso_providers&.find { |p| p[:name] == @pending_auth["provider"] }
-      provider_default_role = provider_config&.dig(:settings, :default_role)
-      @user.role = User.role_for_new_family_creator(fallback_role: provider_default_role || :admin)
-    end
+    assign_signup_family_and_role(@user, invitation: invitation)
 
     if @user.save
       # Create the OIDC (or other SSO) identity

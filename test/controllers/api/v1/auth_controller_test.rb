@@ -26,9 +26,14 @@ class Api::V1::AuthControllerTest < ActionDispatch::IntegrationTest
     # Use a real cache store for SSO linking tests (test env uses :null_store by default)
     @original_cache = Rails.cache
     Rails.cache = ActiveSupport::Cache::MemoryStore.new
+
+    @original_onboarding_state = Setting.onboarding_state
+    @original_invite_only_default_family_id = Setting.invite_only_default_family_id
   end
 
   teardown do
+    Setting.onboarding_state = @original_onboarding_state if @original_onboarding_state.present?
+    Setting.invite_only_default_family_id = @original_invite_only_default_family_id
     Rails.cache = @original_cache if @original_cache
   end
 
@@ -166,6 +171,55 @@ class Api::V1::AuthControllerTest < ActionDispatch::IntegrationTest
     new_user = User.find(response_data["user"]["id"])
     assert_equal "admin", new_user.role
     assert new_user.family.present?
+  end
+
+  test "signup joins configured invite-only default family as member" do
+    default_family = families(:empty)
+    Setting.onboarding_state = "invite_only"
+    Setting.invite_only_default_family_id = default_family.id.to_s
+
+    assert_no_difference("Family.count") do
+      post "/api/v1/auth/signup", params: {
+        user: {
+          email: "defaultfamily@example.com",
+          password: "SecurePass123!",
+          first_name: "Default",
+          last_name: "Family"
+        },
+        device: @device_info
+      }
+    end
+
+    assert_response :created
+    user = User.find_by!(email: "defaultfamily@example.com")
+    assert_equal default_family, user.family
+    assert_equal "member", user.role
+  end
+
+  test "signup accepts pending invitation before invite-only default family" do
+    default_family = families(:empty)
+    invitation = invitations(:two)
+    Setting.onboarding_state = "invite_only"
+    Setting.invite_only_default_family_id = default_family.id.to_s
+
+    assert_no_difference("Family.count") do
+      post "/api/v1/auth/signup", params: {
+        user: {
+          email: "ignored@example.com",
+          password: "SecurePass123!",
+          first_name: "Invited",
+          last_name: "User",
+          invitation: invitation.token
+        },
+        device: @device_info
+      }
+    end
+
+    assert_response :created
+    user = User.find_by!(email: invitation.email)
+    assert_equal invitation.family, user.family
+    assert_equal invitation.role, user.role
+    assert_not_nil invitation.reload.accepted_at
   end
 
   test "should require invite code when enabled" do
@@ -703,6 +757,74 @@ class Api::V1::AuthControllerTest < ActionDispatch::IntegrationTest
 
     # Linking code should be consumed
     assert_nil Rails.cache.read("mobile_sso_link:#{linking_code}")
+  end
+
+  test "sso_create_account joins configured invite-only default family as member" do
+    default_family = families(:empty)
+    Setting.onboarding_state = "invite_only"
+    Setting.invite_only_default_family_id = default_family.id.to_s
+
+    linking_code = SecureRandom.urlsafe_base64(32)
+    Rails.cache.write("mobile_sso_link:#{linking_code}", {
+      provider: "google_oauth2",
+      uid: "google-uid-default-family",
+      email: "defaultsso@example.com",
+      first_name: "Default",
+      last_name: "Sso",
+      name: "Default Sso",
+      device_info: @device_info.stringify_keys,
+      allow_account_creation: true
+    }, expires_in: 10.minutes)
+
+    assert_difference([ "User.count", "OidcIdentity.count" ], 1) do
+      assert_no_difference("Family.count") do
+        post "/api/v1/auth/sso_create_account", params: {
+          linking_code: linking_code,
+          first_name: "Default",
+          last_name: "Sso"
+        }
+      end
+    end
+
+    assert_response :success
+    user = User.find_by!(email: "defaultsso@example.com")
+    assert_equal default_family, user.family
+    assert_equal "member", user.role
+  end
+
+  test "sso_create_account accepts pending invitation before invite-only default family" do
+    default_family = families(:empty)
+    invitation = invitations(:two)
+    Setting.onboarding_state = "invite_only"
+    Setting.invite_only_default_family_id = default_family.id.to_s
+
+    linking_code = SecureRandom.urlsafe_base64(32)
+    Rails.cache.write("mobile_sso_link:#{linking_code}", {
+      provider: "google_oauth2",
+      uid: "google-uid-invited-family",
+      email: invitation.email,
+      first_name: "Invited",
+      last_name: "Sso",
+      name: "Invited Sso",
+      device_info: @device_info.stringify_keys,
+      allow_account_creation: true
+    }, expires_in: 10.minutes)
+
+    assert_difference([ "User.count", "OidcIdentity.count" ], 1) do
+      assert_no_difference("Family.count") do
+        post "/api/v1/auth/sso_create_account", params: {
+          linking_code: linking_code,
+          first_name: "Invited",
+          last_name: "Sso"
+        }
+      end
+    end
+
+    assert_response :success
+    user = User.find_by!(email: invitation.email)
+    assert_equal invitation.family, user.family
+    assert_equal invitation.role, user.role
+    assert_not_nil invitation.reload.accepted_at
   end
 
   test "should reject SSO create account when not allowed" do
