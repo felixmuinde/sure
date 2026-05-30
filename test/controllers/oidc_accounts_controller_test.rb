@@ -9,7 +9,7 @@ class OidcAccountsControllerTest < ActionController::TestCase
   end
 
   teardown do
-    Setting.onboarding_state = @original_onboarding_state if @original_onboarding_state.present?
+    Setting.onboarding_state = @original_onboarding_state
     Setting.invite_only_default_family_id = @original_invite_only_default_family_id
   end
 
@@ -246,6 +246,21 @@ class OidcAccountsControllerTest < ActionController::TestCase
     assert_equal invitation.family, new_user.family
     assert_equal invitation.role, new_user.role
     assert_not_nil invitation.reload.accepted_at
+  end
+
+  test "create_user falls back to new family when invite-only default family id is stale" do
+    Setting.onboarding_state = "invite_only"
+    Setting.invite_only_default_family_id = SecureRandom.uuid
+    session[:pending_oidc_auth] = new_user_auth
+
+    assert_difference([ "User.count", "OidcIdentity.count", "Family.count" ], 1) do
+      post :create_user
+    end
+
+    assert_redirected_to root_path
+    new_user = User.find_by!(email: new_user_auth["email"])
+    assert new_user.family.present?
+    assert_not_equal Setting.invite_only_default_family_id, new_user.family_id.to_s
   end
 
   test "create_user uses form params for name when provided" do

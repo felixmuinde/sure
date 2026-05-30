@@ -19,12 +19,10 @@ module Invitable
       if invitation.present?
         user.family = invitation.family
         user.role = invitation.role
-        user.email = invitation.email if user.respond_to?(:email=)
+        user.email = invitation.email
       elsif (default_family = invite_only_default_family)
         user.family = default_family
         user.role = :member
-      elsif Setting.onboarding_state == "invite_only" && Setting.invite_only_default_family_id.present?
-        nil
       else
         user.family = Family.new
         user.role = User.role_for_new_family_creator(fallback_role: new_family_fallback_role)
