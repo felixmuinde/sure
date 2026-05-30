@@ -41,7 +41,11 @@ module Api
 
         user = User.new(user_signup_params)
 
-        assign_signup_family_and_role(user, invitation: @invitation)
+        assign_signup_family_and_role(
+          user,
+          invitation: @invitation,
+          allow_new_family_when_invite_only_default_missing: true
+        )
 
         # Atomic: user creation, invite-code claim, and device/token issuance
         # either all commit or none do. Without this, a post-commit device
@@ -188,6 +192,11 @@ module Api
 
         unless invitation.present? || cached[:allow_account_creation]
           render json: { error: "SSO account creation is disabled. Please contact an administrator." }, status: :forbidden
+          return
+        end
+
+        if invitation.blank? && invite_only_default_family_missing?
+          render json: { error: "Invite-only default family is unavailable. Please contact an administrator." }, status: :forbidden
           return
         end
 

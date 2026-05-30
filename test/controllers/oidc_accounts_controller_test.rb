@@ -210,6 +210,19 @@ class OidcAccountsControllerTest < ActionController::TestCase
     assert_equal "guest", new_user.role
   end
 
+  test "create_user rejects stale invite-only default family" do
+    Setting.onboarding_state = "invite_only"
+    Setting.invite_only_default_family_id = SecureRandom.uuid
+    session[:pending_oidc_auth] = new_user_auth
+
+    assert_no_difference([ "User.count", "OidcIdentity.count", "Family.count" ]) do
+      post :create_user
+    end
+
+    assert_redirected_to new_session_path
+    assert_equal "Invite-only default family is unavailable. Please contact an administrator.", flash[:alert]
+  end
+
   test "create_user joins configured invite-only default family as member" do
     default_family = families(:empty)
     Setting.onboarding_state = "invite_only"

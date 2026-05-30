@@ -13,7 +13,11 @@ class RegistrationsController < ApplicationController
   end
 
   def create
-    assign_signup_family_and_role(@user, invitation: @invitation)
+    assign_signup_family_and_role(
+      @user,
+      invitation: @invitation,
+      allow_new_family_when_invite_only_default_missing: true
+    )
 
     if signup_with_invite_claim!
       redirect_to root_path, notice: t(".success")

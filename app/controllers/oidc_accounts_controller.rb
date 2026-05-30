@@ -108,6 +108,11 @@ class OidcAccountsController < ApplicationController
       return
     end
 
+    if invitation.blank? && invite_only_default_family_missing?
+      redirect_to new_session_path, alert: "Invite-only default family is unavailable. Please contact an administrator."
+      return
+    end
+
     # Create SSO-only user without local password.
     # Security: JIT users should NOT have password_digest set to prevent
     # chained authentication attacks where SSO users gain local login access

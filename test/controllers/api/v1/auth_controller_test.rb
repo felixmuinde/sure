@@ -195,6 +195,37 @@ class Api::V1::AuthControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "signup with invite code creates family when invite-only default family id is stale" do
+    invite_code = InviteCode.create!
+
+    with_self_hosting do
+      Setting.onboarding_state = "invite_only"
+      Setting.invite_only_default_family_id = SecureRandom.uuid
+
+      assert_difference("User.count", 1) do
+        assert_difference("Family.count", 1) do
+          assert_difference("InviteCode.count", -1) do
+            post "/api/v1/auth/signup", params: {
+              user: {
+                email: "staleinvite@example.com",
+                password: "SecurePass123!",
+                first_name: "Stale",
+                last_name: "Invite"
+              },
+              device: @device_info,
+              invite_code: invite_code.token
+            }
+          end
+        end
+      end
+
+      assert_response :created
+      user = User.find_by!(email: "staleinvite@example.com")
+      assert_equal "admin", user.role
+      assert user.family.present?
+    end
+  end
+
   test "signup joins configured invite-only default family as member" do
     default_family = families(:empty)
     Setting.onboarding_state = "invite_only"
@@ -809,6 +840,35 @@ class Api::V1::AuthControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     user = User.find_by!(email: "providerrole@example.com")
     assert_equal "member", user.role
+  end
+
+  test "sso_create_account rejects stale invite-only default family without consuming linking code" do
+    Setting.onboarding_state = "invite_only"
+    Setting.invite_only_default_family_id = SecureRandom.uuid
+
+    linking_code = SecureRandom.urlsafe_base64(32)
+    Rails.cache.write("mobile_sso_link:#{linking_code}", {
+      provider: "google_oauth2",
+      uid: "google-uid-stale-default",
+      email: "stalesso@example.com",
+      first_name: "Stale",
+      last_name: "Sso",
+      name: "Stale Sso",
+      device_info: @device_info.stringify_keys,
+      allow_account_creation: true
+    }, expires_in: 10.minutes)
+
+    assert_no_difference([ "User.count", "OidcIdentity.count", "Family.count" ]) do
+      post "/api/v1/auth/sso_create_account", params: {
+        linking_code: linking_code,
+        first_name: "Stale",
+        last_name: "Sso"
+      }
+    end
+
+    assert_response :forbidden
+    assert_equal "Invite-only default family is unavailable. Please contact an administrator.", JSON.parse(response.body)["error"]
+    assert Rails.cache.read("mobile_sso_link:#{linking_code}").present?
   end
 
   test "sso_create_account joins configured invite-only default family as member" do

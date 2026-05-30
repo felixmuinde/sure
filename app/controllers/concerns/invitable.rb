@@ -15,7 +15,12 @@ module Invitable
       end
     end
 
-    def assign_signup_family_and_role(user, invitation: nil, new_family_fallback_role: :admin)
+    def assign_signup_family_and_role(
+      user,
+      invitation: nil,
+      new_family_fallback_role: :admin,
+      allow_new_family_when_invite_only_default_missing: false
+    )
       if invitation.present?
         user.family = invitation.family
         user.role = invitation.role
@@ -23,7 +28,7 @@ module Invitable
       elsif (default_family = invite_only_default_family)
         user.family = default_family
         user.role = :member
-      elsif Setting.onboarding_state == "invite_only" && Setting.invite_only_default_family_id.present?
+      elsif invite_only_default_family_missing? && !allow_new_family_when_invite_only_default_missing
         nil
       else
         user.family = Family.new
@@ -45,6 +50,12 @@ module Invitable
       return unless default_family_id.present? && Setting.onboarding_state == "invite_only"
 
       Family.find_by(id: default_family_id)
+    end
+
+    def invite_only_default_family_missing?
+      Setting.onboarding_state == "invite_only" &&
+        Setting.invite_only_default_family_id.present? &&
+        invite_only_default_family.blank?
     end
 
     def self_hosted?
