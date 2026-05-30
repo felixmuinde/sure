@@ -15,12 +15,7 @@ module Invitable
       end
     end
 
-    def assign_signup_family_and_role(
-      user,
-      invitation: nil,
-      new_family_fallback_role: :admin,
-      allow_new_family_when_invite_only_default_missing: false
-    )
+    def assign_signup_family_and_role(user, invitation: nil, new_family_fallback_role: :admin)
       if invitation.present?
         user.family = invitation.family
         user.role = invitation.role
@@ -28,8 +23,6 @@ module Invitable
       elsif (default_family = invite_only_default_family)
         user.family = default_family
         user.role = :member
-      elsif invite_only_default_family_missing? && !allow_new_family_when_invite_only_default_missing
-        nil
       else
         user.family = Family.new
         user.role = User.role_for_new_family_creator(fallback_role: new_family_fallback_role)

@@ -9,7 +9,7 @@ class OidcAccountsControllerTest < ActionController::TestCase
   end
 
   teardown do
-    Setting.onboarding_state = @original_onboarding_state if @original_onboarding_state.present?
+    Setting.onboarding_state = @original_onboarding_state unless @original_onboarding_state.nil?
     Setting.invite_only_default_family_id = @original_invite_only_default_family_id
   end
 

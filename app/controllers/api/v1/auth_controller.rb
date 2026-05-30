@@ -12,6 +12,7 @@ module Api
       before_action :log_api_access, only: :enable_ai
 
       def signup
+        # invite_code_required? consults @invitation, so resolve it before checking invite-code requirements.
         @invitation = pending_invitation_from_params
 
         # Check if invite code is required
@@ -41,11 +42,7 @@ module Api
 
         user = User.new(user_signup_params)
 
-        assign_signup_family_and_role(
-          user,
-          invitation: @invitation,
-          allow_new_family_when_invite_only_default_missing: true
-        )
+        assign_signup_family_and_role(user, invitation: @invitation)
 
         # Atomic: user creation, invite-code claim, and device/token issuance
         # either all commit or none do. Without this, a post-commit device
