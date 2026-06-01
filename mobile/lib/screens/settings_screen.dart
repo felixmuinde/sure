@@ -257,7 +257,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _launchContactUrl(BuildContext context) async {
-    final uri = Uri.parse('https://chat.whatsapp.com/Ca2yaFwpSOxIMQkuh0IcGM');
+    final uri = Uri.parse('https://chat.whatsapp.com/IVBXS2QtJpqIFlZYoSPD1t');
     final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -486,7 +486,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             leading: const Icon(Icons.chat_bubble_outline),
             title: const Text('Contact us'),
             subtitle: Text(
-              'chat.whatsapp.com/Ca2yaFwpSOxIMQkuh0IcGM',
+              'chat.whatsapp.com/IVBXS2QtJpqIFlZYoSPD1t',
               style: TextStyle(
                 color: Theme.of(context).colorScheme.primary,
                 decoration: TextDecoration.underline,
