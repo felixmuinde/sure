@@ -151,12 +151,14 @@ jobs:
         working-directory: mobile
         if: ${{ steps.check_prereqs.outputs.enabled == 'true' }}
         env:
-          APP_BUNDLE_ID: am.sure.mobile
+          APP_BUNDLE_ID: ${{ vars.IOS_APP_BUNDLE_ID || 'am.sure.mobile' }}
           IOS_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
           PROFILE_NAME: ${{ secrets.IOS_PROVISIONING_PROFILE_NAME }}
           IOS_DISTRIBUTION_CERT_NAME: ${{ secrets.IOS_DISTRIBUTION_CERT_NAME }}
         run: |
           set -euo pipefail
+
+          export APP_BUNDLE_IDENTIFIER="${APP_BUNDLE_ID}"
 
           IOS_VERSION="$(tr -d '[:space:]' < ../.sure-version | sed 's/-.*$//')"
           IOS_BUILD_NUMBER="$(date -u +%Y%m%d%H%M)"
@@ -177,7 +179,7 @@ jobs:
 
           def patch_block(match):
               block = match.group(0)
-              if "PRODUCT_BUNDLE_IDENTIFIER = am.sure.mobile;" not in block:
+              if "PRODUCT_BUNDLE_IDENTIFIER = " not in block:
                   return block
               if "CODE_SIGN_STYLE = Manual;" not in block:
                   block = block.replace("CURRENT_PROJECT_VERSION = \"$(FLUTTER_BUILD_NUMBER)\";", "CURRENT_PROJECT_VERSION = \"$(FLUTTER_BUILD_NUMBER)\";\n\t\t\t\tCODE_SIGN_STYLE = Manual;")
