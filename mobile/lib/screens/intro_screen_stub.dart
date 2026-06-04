@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -44,75 +45,12 @@ class _AccountSummaryView extends StatelessWidget {
           _GreetingCard(firstName: firstName, theme: theme),
           const SizedBox(height: 8),
           _AskAnythingTile(theme: theme),
-          const SizedBox(height: 24),
-          // ── My Account header ────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'My Account',
-                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Live data — Coming soon',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // ── Section cards ─────────────────────────────────────────────
-          _SectionCard(
-            label: 'Financing',
-            theme: theme,
-            children: [
-              _StatItem(label: 'Maximum financed amount', value: 'Coming Soon', theme: theme, align: CrossAxisAlignment.start, tooltip: 'Total cost of education which Chancen can cover for you.'),
-              const SizedBox(height: 14),
-              _StatItem(label: 'Chancen amount paid to date', value: 'Coming Soon', theme: theme, align: CrossAxisAlignment.start, tooltip: 'How much Chancen has paid towards your education so far.'),
-              const SizedBox(height: 14),
-              _StatItem(label: 'Total commitment fees paid to date', value: 'Coming Soon', theme: theme, align: CrossAxisAlignment.start, tooltip: 'How much you have paid to date in Commitment Fees. Anything you pay now will reduce how much you owe in future repayments.'),
-              const SizedBox(height: 14),
-              _StatItem(label: 'Next commitment fee payment due', value: 'Coming Soon', theme: theme, align: CrossAxisAlignment.start, tooltip: 'Your next Commitment Fee instalment due. You can decide to increase this to lower your future repayments.'),
-            ],
-          ),
+          const SizedBox(height: 20),
+          _SectionHeaderTile(theme: theme),
+          const SizedBox(height: 16),
+          _IsaFinancingCard(theme: theme),
           const SizedBox(height: 12),
-          _SectionCard(
-            label: 'Contract Conditions',
-            theme: theme,
-            children: [
-              _StatItem(label: 'Repayment % of income per instalment', value: 'Coming Soon', theme: theme, align: CrossAxisAlignment.start, tooltip: 'What percentage of your net income will go towards repaying your ISA on a monthly basis.'),
-              const SizedBox(height: 14),
-              _StatItem(label: 'Total number of instalments', value: 'Coming Soon', theme: theme, align: CrossAxisAlignment.start, tooltip: 'The total number of instalments to be paid to fulfil your ISA contract.'),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _SectionCard(
-            label: 'Repayment Summary',
-            theme: theme,
-            children: [
-              _StatItem(label: 'Total repaid to date', value: 'Coming Soon', theme: theme, align: CrossAxisAlignment.start, tooltip: 'How much you have repaid to date towards your education.'),
-              const SizedBox(height: 14),
-              _StatItem(label: 'Number of instalments paid to date', value: 'Coming Soon', theme: theme, align: CrossAxisAlignment.start, tooltip: 'How many instalments you have paid to date towards your education.'),
-              const SizedBox(height: 14),
-              _StatItem(label: 'Outstanding instalments', value: 'Coming Soon', theme: theme, align: CrossAxisAlignment.start, tooltip: 'How many instalments you have remaining to be paid.'),
-              const SizedBox(height: 14),
-              _StatItem(label: 'Maximum amount payable (this year)', value: 'Coming Soon', theme: theme, align: CrossAxisAlignment.start, tooltip: 'How much you would have to repay this year to fully repay your ISA and exit your contract.'),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _SectionCard(
-            label: 'Repayment Status',
-            theme: theme,
-            children: [
-              _StatItem(label: 'Next payment due date', value: 'Coming Soon', theme: theme, align: CrossAxisAlignment.start, tooltip: 'The date by which you need to make your next repayment.'),
-              const SizedBox(height: 14),
-              _RepaymentStatusItem(theme: theme),
-            ],
-          ),
+          _IsaInstalmentsCard(theme: theme),
         ],
       ),
     ),
@@ -241,6 +179,40 @@ class _AskAnythingTile extends StatelessWidget {
   }
 }
 
+class _SectionHeaderTile extends StatelessWidget {
+  const _SectionHeaderTile({required this.theme});
+
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.brightness == Brightness.light ? Colors.white : Colors.black,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'My Account',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Live data - Coming soon',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 enum IsaStatus {
   contractSigned,
@@ -286,20 +258,21 @@ extension IsaStatusDisplay on IsaStatus {
   }
 }
 
-class _SectionCard extends StatelessWidget {
-  const _SectionCard({
-    required this.label,
-    required this.theme,
-    required this.children,
-  });
+class _IsaFinancingCard extends StatelessWidget {
+  const _IsaFinancingCard({required this.theme});
 
-  final String label;
   final ThemeData theme;
-  final List<Widget> children;
+
+  static const _amountPaid    = 'KSh 45,000';
+  static const _totalFinanced = 'KSh 268,240';
+  static const _status        = IsaStatus.contractSigned;
 
   @override
   Widget build(BuildContext context) {
-    final accentColor = theme.brightness == Brightness.light ? _kDarkGreen : _kGreen;
+    final statusColor = (_status == IsaStatus.contractSigned && theme.brightness == Brightness.dark)
+        ? _kGreen
+        : _status.color;
+
     return Container(
       decoration: BoxDecoration(
         color: theme.brightness == Brightness.light ? Colors.white : Colors.black,
@@ -312,64 +285,92 @@ class _SectionCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Theme(
-        data: theme.copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          initiallyExpanded: true,
-          tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-          childrenPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-          expandedCrossAxisAlignment: CrossAxisAlignment.start,
-          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-          collapsedShape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-          title: Text(
-            label,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: accentColor,
-            ),
-          ),
-          iconColor: accentColor,
-          collapsedIconColor: accentColor,
-          children: children,
-        ),
-      ),
-    );
-  }
-}
-
-class _RepaymentStatusItem extends StatelessWidget {
-  const _RepaymentStatusItem({required this.theme});
-
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context) {
-    // Placeholder — will reflect live status once data is connected.
-    const statusColor = Color(0xFF10A861);
-    const statusMessage = 'Congratulations on meeting the repayment due date!';
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Tooltip(
-        message: statusMessage,
-        triggerMode: TooltipTriggerMode.tap,
-        child: Row(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 10,
-              height: 10,
-              decoration: const BoxDecoration(color: statusColor, shape: BoxShape.circle),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: _kGreen.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(_IsaIcons.financing, color: _kGreen, size: 18),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'ISA Financing',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(_status.icon, size: 13, color: statusColor),
+                      const SizedBox(width: 4),
+                      Text(
+                        _status.label,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: statusColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
+            const SizedBox(height: 20),
             Text(
-              'Normal',
+              'Repayments Received',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: statusColor,
-                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
-            const SizedBox(width: 4),
-            Icon(Icons.info_outline, size: 12, color: theme.colorScheme.onSurfaceVariant),
+            const SizedBox(height: 4),
+            Text(
+              'Coming Soon',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Divider(height: 1, color: theme.dividerColor),
+            const SizedBox(height: 16),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: _StatItem(
+                    label: 'Repayments\nReceived',
+                    value: _amountPaid,
+                    theme: theme,
+                    align: CrossAxisAlignment.start,
+                  ),
+                ),
+                VerticalDivider(width: 1, thickness: 1, color: theme.dividerColor),
+                Expanded(
+                  child: _StatItem(
+                    label: 'Total\nFinanced',
+                    value: _totalFinanced,
+                    theme: theme,
+                    align: CrossAxisAlignment.end,
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -377,7 +378,88 @@ class _RepaymentStatusItem extends StatelessWidget {
   }
 }
 
+class _IsaInstalmentsCard extends StatelessWidget {
+  const _IsaInstalmentsCard({required this.theme});
 
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    const instalmentsPaid = 9;
+    const maxInstalments = 108;
+    const progress = 9 / 108;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.brightness == Brightness.light ? Colors.white : Colors.black,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: (theme.brightness == Brightness.light ? _kDarkGreen : _kGreen).withValues(alpha: 0.18),
+            blurRadius: 0,
+            offset: const Offset(4, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            const _CircularProgress(progress: progress, color: _kGreen),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: _kGreen.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(_IsaIcons.instalments, color: _kGreen, size: 18),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Instalments',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Divider(height: 1, color: theme.dividerColor),
+                  const SizedBox(height: 14),
+                  _StatItem(
+                    label: 'Paid So Far',
+                    value: '$instalmentsPaid',
+                    theme: theme,
+                    align: CrossAxisAlignment.start,
+                  ),
+                  const SizedBox(height: 10),
+                  _StatItem(
+                    label: 'Maximum No. of Instalments',
+                    value: '$maxInstalments',
+                    theme: theme,
+                    align: CrossAxisAlignment.start,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+abstract class _IsaIcons {
+  static const financing = Icons.account_balance_outlined;
+  static const instalments = Icons.calendar_month_outlined;
+}
 
 class _StatItem extends StatelessWidget {
   const _StatItem({
@@ -385,50 +467,30 @@ class _StatItem extends StatelessWidget {
     required this.value,
     required this.theme,
     required this.align,
-    this.tooltip,
   });
 
   final String label;
   final String value;
   final ThemeData theme;
   final CrossAxisAlignment align;
-  final String? tooltip;
 
   @override
   Widget build(BuildContext context) {
-    final labelText = Text(
-      label,
-      style: theme.textTheme.bodySmall?.copyWith(
-        color: theme.colorScheme.onSurfaceVariant,
-        height: 1.4,
-      ),
-    );
-    return SizedBox(
-      width: double.infinity,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Column(
         crossAxisAlignment: align,
         children: [
-          tooltip != null
-              ? Tooltip(
-                  message: tooltip!,
-                  triggerMode: TooltipTriggerMode.tap,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      labelText,
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.info_outline,
-                        size: 12,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ],
-                  ),
-                )
-              : labelText,
+          Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              height: 1.4,
+            ),
+          ),
           const SizedBox(height: 4),
           Text(
-            value,
+            'Coming Soon',
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
               fontStyle: FontStyle.italic,
@@ -440,3 +502,79 @@ class _StatItem extends StatelessWidget {
   }
 }
 
+class _CircularProgress extends StatelessWidget {
+  const _CircularProgress({required this.progress, this.color = _kGreen});
+
+  final double progress;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SizedBox(
+      width: 76,
+      height: 76,
+      child: CustomPaint(
+        painter: _CircularProgressPainter(
+          progress: progress,
+          trackColor: theme.colorScheme.outlineVariant,
+          progressColor: color,
+        ),
+        child: Center(
+          child: Text(
+            'Soon',
+            style: theme.textTheme.labelSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CircularProgressPainter extends CustomPainter {
+  _CircularProgressPainter({
+    required this.progress,
+    required this.trackColor,
+    required this.progressColor,
+  });
+
+  final double progress;
+  final Color trackColor;
+  final Color progressColor;
+
+  static const _strokeWidth = 8.0;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - _strokeWidth / 2;
+
+    final trackPaint = Paint()
+      ..color = trackColor
+      ..strokeWidth = _strokeWidth
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    canvas.drawCircle(center, radius, trackPaint);
+
+    final progressPaint = Paint()
+      ..color = progressColor
+      ..strokeWidth = _strokeWidth
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -math.pi / 2,
+      2 * math.pi * progress,
+      false,
+      progressPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_CircularProgressPainter old) =>
+      old.progress != progress || old.trackColor != trackColor;
+}

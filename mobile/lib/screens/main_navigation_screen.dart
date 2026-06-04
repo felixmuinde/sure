@@ -17,24 +17,25 @@ class _Tab {
 }
 
 /// Returns the tab list for the given user layout.
-/// All users see: Insights → Assistant.
-/// Settings is appended separately and reached via the AppBar gear icon.
+/// Both guest (intro) and admin (dashboard) currently share the same layout.
 List<_Tab> _tabsFor(String uiLayout) {
+  // Shared layout: Assistant → Insights.
+  // Settings is appended separately and reached via the AppBar gear icon.
   return const [
-    _Tab(
-      screen: InsightsPreviewScreen(),
-      destination: NavigationDestination(
-        icon: Icon(Icons.insights_outlined),
-        selectedIcon: Icon(Icons.insights),
-        label: 'Insights',
-      ),
-    ),
     _Tab(
       screen: ChatListScreen(),
       destination: NavigationDestination(
         icon: Icon(Icons.chat_bubble_outline),
         selectedIcon: Icon(Icons.chat_bubble),
         label: 'Assistant',
+      ),
+    ),
+    _Tab(
+      screen: InsightsPreviewScreen(),
+      destination: NavigationDestination(
+        icon: Icon(Icons.insights_outlined),
+        selectedIcon: Icon(Icons.insights),
+        label: 'Insights',
       ),
     ),
   ];
@@ -55,7 +56,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     AuthProvider authProvider,
     List<_Tab> tabs,
   ) async {
-    const chatIndex = 1; // Assistant is second tab
+    const chatIndex = 0;
 
     if (index == chatIndex && !authProvider.aiEnabled) {
       final enabled = await _showEnableAiPrompt();
@@ -69,6 +70,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     AuthProvider authProvider,
     List<_Tab> tabs,
   ) async {
+    // Settings is always the screen after the visible tabs.
     await _handleDestinationSelected(tabs.length, authProvider, tabs);
   }
 
