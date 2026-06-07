@@ -63,7 +63,7 @@ jobs:
             echo "❌ ERROR: .sure-version is empty or unreadable"
             exit 1
           fi
-          VERSION_CODE="$(date +%s)"
+          VERSION_CODE="$(date -u +%Y%m%d%H)"
           if [ -z "$VERSION_CODE" ]; then
             echo "❌ ERROR: Failed to generate version code"
             exit 1
