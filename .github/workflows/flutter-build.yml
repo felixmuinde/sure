@@ -58,17 +58,9 @@ jobs:
       - name: Compute Play-safe version numbers
         working-directory: mobile
         run: |
-          VERSION_NAME="$(awk '
-            /^version:/ {
-              split($2, parts, "+")
-              VERSION = parts[1]
-              gsub(/[\"\x27]/, "", VERSION)
-              print VERSION
-              exit
-            }
-          ' pubspec.yaml)"
+          VERSION_NAME="$(tr -d '[:space:]' < ../.sure-version | sed 's/-.*$//')"
           if [ -z "$VERSION_NAME" ]; then
-            echo "❌ ERROR: Failed to extract version from pubspec.yaml"
+            echo "❌ ERROR: .sure-version is empty or unreadable"
             exit 1
           fi
           VERSION_CODE="$(date +%s)"
