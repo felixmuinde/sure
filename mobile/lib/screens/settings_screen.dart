@@ -10,6 +10,7 @@ import '../services/log_service.dart';
 import '../services/biometric_service.dart';
 import '../services/preferences_service.dart';
 import '../services/user_service.dart';
+import 'backend_config_screen.dart';
 import 'log_viewer_screen.dart';
 import '../models/custom_proxy_header.dart';
 import '../services/api_config.dart';
@@ -599,6 +600,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     : '${_customHeaders.length} configured',
               ),
               onTap: _showCustomHeadersDialog,
+            ),
+            ListTile(
+              leading: const Icon(Icons.dns_outlined),
+              title: const Text('Backend Server'),
+              subtitle: const Text('Change the backend URL and test connection'),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const BackendConfigScreen()),
+              ),
             ),
           ],
 

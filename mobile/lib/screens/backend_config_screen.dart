@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import '../models/custom_proxy_header.dart';
+import '../providers/auth_provider.dart';
 import '../services/api_config.dart';
 import '../services/custom_proxy_headers_service.dart';
 import '../widgets/custom_proxy_headers_editor.dart';
@@ -154,9 +156,17 @@ class _BackendConfigScreenState extends State<BackendConfigScreen> {
       // Update ApiConfig
       ApiConfig.setBaseUrl(normalizedUrl);
 
-      // Notify parent that config is saved
-      if (mounted && widget.onConfigSaved != null) {
-        widget.onConfigSaved!();
+      // Notify parent that config is saved (initial setup flow),
+      // or sign the user out so they re-authenticate against the new backend.
+      if (mounted) {
+        if (widget.onConfigSaved != null) {
+          widget.onConfigSaved!();
+        } else {
+          await Provider.of<AuthProvider>(context, listen: false).logout();
+          if (mounted) {
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          }
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -204,6 +214,9 @@ class _BackendConfigScreenState extends State<BackendConfigScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
+      appBar: Navigator.canPop(context)
+          ? AppBar(title: const Text('Backend Server'))
+          : null,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
