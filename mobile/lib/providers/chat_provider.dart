@@ -35,6 +35,7 @@ class ChatProvider with ChangeNotifier {
   bool get isWaitingForResponse => _isWaitingForResponse;
   bool get isPolling => _pollingTimer != null;
   String? get errorMessage => _errorMessage;
+  bool get isAiFeatureDisabled => _errorMessage == 'feature_disabled';
 
   /// Fetch list of chats
   Future<void> fetchChats({
@@ -487,6 +488,14 @@ class ChatProvider with ChangeNotifier {
       _errorMessage = 'The assistant took too long to respond. Please try again.';
       notifyListeners();
     }
+  }
+
+  /// Clear the loaded chat list and any list-level error.
+  void clearChats() {
+    _chats = [];
+    _errorMessage = null;
+    _isLoading = false;
+    notifyListeners();
   }
 
   /// Clear current chat
