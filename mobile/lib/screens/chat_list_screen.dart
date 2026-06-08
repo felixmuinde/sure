@@ -77,6 +77,16 @@ class _ChatListScreenState extends State<ChatListScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final chatProvider = Provider.of<ChatProvider>(context, listen: false);
 
+    if (!authProvider.aiEnabled) {
+      chatProvider.clearChats();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('AI is not enabled yet for this account.'),
+        ),
+      );
+      return;
+    }
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -98,11 +108,6 @@ class _ChatListScreenState extends State<ChatListScreen> {
     );
 
     if (confirmed != true || !mounted) return;
-
-    if (!authProvider.aiEnabled) {
-      chatProvider.clearChats();
-      return;
-    }
 
     final accessToken = await authProvider.getValidAccessToken();
     if (accessToken == null) {
