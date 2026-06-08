@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
+import '../widgets/ai_disabled_empty_state.dart';
 import 'chat_conversation_screen.dart';
 
 class ChatListScreen extends StatefulWidget {
@@ -24,6 +25,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
   Future<void> _loadChats() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+
+    if (!authProvider.aiEnabled) {
+      chatProvider.clearChats();
+      return;
+    }
 
     final accessToken = await authProvider.getValidAccessToken();
     if (accessToken == null) {
@@ -93,6 +99,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
     if (confirmed != true || !mounted) return;
 
+    if (!authProvider.aiEnabled) {
+      chatProvider.clearChats();
+      return;
+    }
+
     final accessToken = await authProvider.getValidAccessToken();
     if (accessToken == null) {
       await authProvider.logout();
@@ -123,6 +134,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   Future<void> _openNewChat() async {
     if (!mounted) return;
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (!authProvider.aiEnabled) return;
 
     await Navigator.push(
       context,
@@ -198,8 +212,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
           ],
         ],
       ),
-      body: Consumer<ChatProvider>(
-        builder: (context, chatProvider, _) {
+      body: Consumer2<AuthProvider, ChatProvider>(
+        builder: (context, authProvider, chatProvider, _) {
+          if (!authProvider.aiEnabled || chatProvider.isAiFeatureDisabled) {
+            return const AiDisabledEmptyState();
+          }
           if (chatProvider.isLoading && chatProvider.chats.isEmpty) {
             return const Center(
               child: CircularProgressIndicator(),
@@ -387,10 +404,16 @@ class _ChatListScreenState extends State<ChatListScreen> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openNewChat,
-        tooltip: 'New Chat',
-        child: const Icon(Icons.add),
+      floatingActionButton: Consumer<AuthProvider>(
+        builder: (context, authProvider, _) {
+          if (!authProvider.aiEnabled) return const SizedBox.shrink();
+
+          return FloatingActionButton(
+            onPressed: _openNewChat,
+            tooltip: 'New Chat',
+            child: const Icon(Icons.add),
+          );
+        },
       ),
     );
   }

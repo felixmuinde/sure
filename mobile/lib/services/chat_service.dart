@@ -98,6 +98,13 @@ class ChatService {
           'error': 'not_found',
           'message': 'Chat not found',
         };
+      } else if (response.statusCode == 403) {
+        final responseData = jsonDecode(response.body);
+        return {
+          'success': false,
+          'error': 'feature_disabled',
+          'message': responseData['message'] ?? 'AI features not enabled',
+        };
       } else {
         final responseData = jsonDecode(response.body);
         return {
@@ -216,6 +223,13 @@ class ChatService {
           'success': false,
           'error': 'not_found',
           'message': 'Chat not found',
+        };
+      } else if (response.statusCode == 403) {
+        final responseData = jsonDecode(response.body);
+        return {
+          'success': false,
+          'error': 'feature_disabled',
+          'message': responseData['message'] ?? 'AI features not enabled',
         };
       } else {
         final responseData = jsonDecode(response.body);
