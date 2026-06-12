@@ -476,6 +476,7 @@ Rails.application.routes.draw do
         get :rows, on: :member
       end
       resource :usage, only: [ :show ], controller: :usage
+      resource :my_account, only: [ :show ], controller: :my_account
       resource :balance_sheet, only: [ :show ], controller: :balance_sheet
       resource :family_settings, only: [ :show ], controller: :family_settings
       post :sync, to: "sync#create", as: :sync_job

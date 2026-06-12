@@ -1538,6 +1538,20 @@ RSpec.configure do |config|
               status_url: { type: :string }
             }
           },
+          StudentAccount: {
+            type: :object,
+            required: %w[email status total_financed repayments_received max_amount installments_paid max_installments currency],
+            properties: {
+              email:                { type: :string, format: :email, description: 'Student email address' },
+              status:               { type: :string, enum: %w[contract_signed repaying paused service_fee_mode completed defaulted graduated], description: 'ISA repayment status' },
+              total_financed:       { type: :number, format: :float, description: 'Total amount financed under the ISA' },
+              repayments_received:  { type: :number, format: :float, description: 'Total repayments received to date' },
+              max_amount:           { type: :number, format: :float, description: 'Maximum amount Chancen can fund' },
+              installments_paid:    { type: :integer, description: 'Number of monthly instalments paid' },
+              max_installments:     { type: :integer, description: 'Total number of instalments in the contract' },
+              currency:             { type: :string, description: 'ISO-4217 currency code (e.g. KES)' }
+            }
+          },
           ResetStatusResponse: {
             type: :object,
             required: %w[status family_id reset_complete counts],

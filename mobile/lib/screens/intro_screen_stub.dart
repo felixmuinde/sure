@@ -1,7 +1,9 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/my_account_provider.dart';
 import 'chat_conversation_screen.dart';
 
 const Color _kGreen  = Color(0xFF84BD00);
@@ -21,6 +23,18 @@ class _InsightsPreviewScreenState extends State<InsightsPreviewScreen>
   bool get wantKeepAlive => true;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final auth = context.read<AuthProvider>();
+      final apiKey = await auth.getValidAccessToken();
+      if (apiKey != null && apiKey.isNotEmpty && mounted) {
+        context.read<MyAccountProvider>().load(apiKey);
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     super.build(context);
     return const _AccountSummaryView();
@@ -30,11 +44,25 @@ class _InsightsPreviewScreenState extends State<InsightsPreviewScreen>
 class _AccountSummaryView extends StatelessWidget {
   const _AccountSummaryView();
 
+  String _fmt(double amount, String currency, bool loading) {
+    if (loading) return '—';
+    return NumberFormat.currency(symbol: '$currency ', decimalDigits: 0).format(amount);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final firstName = context.watch<AuthProvider>().user?.firstName ?? 'there';
+    final myAccount = context.watch<MyAccountProvider>();
+    final account = myAccount.account;
+    final loading = myAccount.isLoading;
     final bg = theme.brightness == Brightness.light ? Colors.white : Colors.black;
+
+    final currency = account?.currency ?? 'KES';
+    final totalFinanced = account != null ? _fmt(account.totalFinanced, currency, loading) : '—';
+    final repaymentsReceived = account != null ? _fmt(account.repaymentsReceived, currency, loading) : '—';
+    final isaStatus = account != null ? IsaStatus.fromString(account.status) : null;
+
     return ColoredBox(
       color: bg,
       child: SingleChildScrollView(
@@ -48,9 +76,20 @@ class _AccountSummaryView extends StatelessWidget {
           const SizedBox(height: 20),
           _SectionHeaderTile(theme: theme),
           const SizedBox(height: 16),
-          _IsaFinancingCard(theme: theme),
+          _IsaFinancingCard(
+            theme: theme,
+            amountPaid: repaymentsReceived,
+            totalFinanced: totalFinanced,
+            isaStatus: isaStatus,
+            loading: loading,
+          ),
           const SizedBox(height: 12),
-          _IsaInstalmentsCard(theme: theme),
+          _IsaInstalmentsCard(
+            theme: theme,
+            instalmentsPaid: account?.installmentsPaid ?? 0,
+            maxInstalments: account?.maxInstallments ?? 0,
+            loading: loading,
+          ),
         ],
       ),
     ),
@@ -192,23 +231,11 @@ class _SectionHeaderTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'My Account',
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Live data - Coming soon',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
+      child: Text(
+        'My Account',
+        style: theme.textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
@@ -220,7 +247,27 @@ enum IsaStatus {
   paused,
   serviceFeeMode,
   completed,
-  defaulted,
+  defaulted;
+
+  static IsaStatus fromString(String value) {
+    switch (value.toLowerCase()) {
+      case 'contract_signed':
+      case 'graduated':
+        return IsaStatus.contractSigned;
+      case 'repaying':
+        return IsaStatus.repaying;
+      case 'paused':
+        return IsaStatus.paused;
+      case 'service_fee_mode':
+        return IsaStatus.serviceFeeMode;
+      case 'completed':
+        return IsaStatus.completed;
+      case 'defaulted':
+        return IsaStatus.defaulted;
+      default:
+        return IsaStatus.repaying;
+    }
+  }
 }
 
 extension IsaStatusDisplay on IsaStatus {
@@ -259,19 +306,26 @@ extension IsaStatusDisplay on IsaStatus {
 }
 
 class _IsaFinancingCard extends StatelessWidget {
-  const _IsaFinancingCard({required this.theme});
+  const _IsaFinancingCard({
+    required this.theme,
+    required this.amountPaid,
+    required this.totalFinanced,
+    required this.loading,
+    this.isaStatus,
+  });
 
   final ThemeData theme;
-
-  static const _amountPaid    = 'KSh 45,000';
-  static const _totalFinanced = 'KSh 268,240';
-  static const _status        = IsaStatus.contractSigned;
+  final String amountPaid;
+  final String totalFinanced;
+  final bool loading;
+  final IsaStatus? isaStatus;
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = (_status == IsaStatus.contractSigned && theme.brightness == Brightness.dark)
+    final status = isaStatus ?? IsaStatus.repaying;
+    final statusColor = (status == IsaStatus.contractSigned && theme.brightness == Brightness.dark)
         ? _kGreen
-        : _status.color;
+        : status.color;
 
     return Container(
       decoration: BoxDecoration(
@@ -317,10 +371,10 @@ class _IsaFinancingCard extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(_status.icon, size: 13, color: statusColor),
+                      Icon(status.icon, size: 13, color: statusColor),
                       const SizedBox(width: 4),
                       Text(
-                        _status.label,
+                        status.label,
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: statusColor,
                           fontWeight: FontWeight.w600,
@@ -340,10 +394,9 @@ class _IsaFinancingCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Coming Soon',
+              amountPaid,
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w800,
-                fontStyle: FontStyle.italic,
               ),
             ),
             const SizedBox(height: 20),
@@ -355,7 +408,7 @@ class _IsaFinancingCard extends StatelessWidget {
                 Expanded(
                   child: _StatItem(
                     label: 'Repayments\nReceived',
-                    value: _amountPaid,
+                    value: amountPaid,
                     theme: theme,
                     align: CrossAxisAlignment.start,
                   ),
@@ -364,7 +417,7 @@ class _IsaFinancingCard extends StatelessWidget {
                 Expanded(
                   child: _StatItem(
                     label: 'Total\nFinanced',
-                    value: _totalFinanced,
+                    value: totalFinanced,
                     theme: theme,
                     align: CrossAxisAlignment.end,
                   ),
@@ -379,15 +432,22 @@ class _IsaFinancingCard extends StatelessWidget {
 }
 
 class _IsaInstalmentsCard extends StatelessWidget {
-  const _IsaInstalmentsCard({required this.theme});
+  const _IsaInstalmentsCard({
+    required this.theme,
+    required this.instalmentsPaid,
+    required this.maxInstalments,
+    required this.loading,
+  });
 
   final ThemeData theme;
+  final int instalmentsPaid;
+  final int maxInstalments;
+  final bool loading;
 
   @override
   Widget build(BuildContext context) {
-    const instalmentsPaid = 9;
-    const maxInstalments = 108;
-    const progress = 9 / 108;
+    final progress = maxInstalments > 0 ? instalmentsPaid / maxInstalments : 0.0;
+    final progressLabel = loading ? '—' : '$instalmentsPaid\n/ $maxInstalments';
 
     return Container(
       decoration: BoxDecoration(
@@ -405,7 +465,7 @@ class _IsaInstalmentsCard extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Row(
           children: [
-            const _CircularProgress(progress: progress, color: _kGreen),
+            _CircularProgress(progress: progress, color: _kGreen, label: progressLabel),
             const SizedBox(width: 20),
             Expanded(
               child: Column(
@@ -435,14 +495,14 @@ class _IsaInstalmentsCard extends StatelessWidget {
                   const SizedBox(height: 14),
                   _StatItem(
                     label: 'Paid So Far',
-                    value: '$instalmentsPaid',
+                    value: loading ? '—' : '$instalmentsPaid',
                     theme: theme,
                     align: CrossAxisAlignment.start,
                   ),
                   const SizedBox(height: 10),
                   _StatItem(
                     label: 'Maximum No. of Instalments',
-                    value: '$maxInstalments',
+                    value: loading ? '—' : '$maxInstalments',
                     theme: theme,
                     align: CrossAxisAlignment.start,
                   ),
@@ -490,10 +550,9 @@ class _StatItem extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Coming Soon',
+            value,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
-              fontStyle: FontStyle.italic,
             ),
           ),
         ],
@@ -503,10 +562,11 @@ class _StatItem extends StatelessWidget {
 }
 
 class _CircularProgress extends StatelessWidget {
-  const _CircularProgress({required this.progress, this.color = _kGreen});
+  const _CircularProgress({required this.progress, this.color = _kGreen, this.label = ''});
 
   final double progress;
   final Color color;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -522,11 +582,11 @@ class _CircularProgress extends StatelessWidget {
         ),
         child: Center(
           child: Text(
-            'Soon',
+            label,
             style: theme.textTheme.labelSmall?.copyWith(
               fontWeight: FontWeight.w600,
-              fontStyle: FontStyle.italic,
             ),
+            textAlign: TextAlign.center,
           ),
         ),
       ),

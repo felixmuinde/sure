@@ -23,6 +23,7 @@ en:
         financial_data_providers: Financial Data Providers
         sync_settings: Sync Settings
         invites: Invite Codes
+        metabase: Metabase (Student Data)
         title: Self-Hosting
         danger_zone: Danger Zone
         clear_cache: Clear data cache
@@ -184,3 +185,18 @@ en:
         include_pending_label: Include pending transactions
         include_pending_description: When enabled, pending (uncleared) transactions will be imported and automatically reconciled when they post. Disable if your bank provides unreliable pending data.
         env_configured_message: This setting is disabled because a provider environment variable (SIMPLEFIN_INCLUDE_PENDING or PLAID_INCLUDE_PENDING) is set. Remove it to enable this setting.
+      metabase_settings:
+        title: Metabase Student Data
+        description: Connect to your Metabase instance to fetch Chancen student account data. The question must accept an email filter parameter and return columns matching the required schema.
+        url_label: Metabase URL
+        url_placeholder: "https://your-metabase.example.com"
+        url_help: The base URL of your Metabase instance (no trailing slash).
+        api_key_label: API Key
+        api_key_placeholder: Enter your Metabase API key
+        api_key_help: The Metabase API key used for authentication. Stored encrypted at rest.
+        question_id_label: Question ID
+        question_id_placeholder: "123"
+        question_id_help: The numeric ID of the saved Metabase question that queries student account data.
+        email_param_label: Email Parameter Name
+        email_param_placeholder: "email (default)"
+        email_param_help: The template-tag name used for the email filter variable in the Metabase question.
