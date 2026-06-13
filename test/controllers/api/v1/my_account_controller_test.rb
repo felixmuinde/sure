@@ -21,14 +21,12 @@ class Api::V1::MyAccountControllerTest < ActionDispatch::IntegrationTest
     Setting.metabase_url = "https://metabase.example.com"
     Setting.metabase_api_key = "test-key" # pipelock:ignore
     Setting.metabase_student_question_id = "123"
-    Setting.metabase_email_param = "email"
   end
 
   teardown do
     Setting.metabase_url = nil
     Setting.metabase_api_key = nil
     Setting.metabase_student_question_id = nil
-    Setting.metabase_email_param = nil
   end
 
   test "returns 401 without auth" do

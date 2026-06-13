@@ -6,7 +6,6 @@ class Api::V1::MyAccountController < Api::V1::BaseController
     url     = Setting.metabase_url.presence
     api_key = Setting.metabase_api_key.presence
     qid     = Setting.metabase_student_question_id.presence
-    param   = Setting.metabase_email_param.presence || "email"
 
     unless url && api_key && qid
       return render_json(
@@ -16,7 +15,7 @@ class Api::V1::MyAccountController < Api::V1::BaseController
     end
 
     provider = Provider::MetabaseStudentAccount.new(
-      base_url: url, api_key: api_key, question_id: qid, email_param: param
+      base_url: url, api_key: api_key, question_id: qid
     )
 
     account = provider.find_by_email(current_resource_owner.email)
