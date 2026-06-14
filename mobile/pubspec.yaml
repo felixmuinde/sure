@@ -26,6 +26,8 @@ dependencies:
   package_info_plus: ^8.0.0
   local_auth: ^2.3.0
   flutter_markdown: ^0.7.2
+  upgrader: ^11.0.0
+  flutter_local_notifications: ^18.0.0
 
 dev_dependencies:
   flutter_test:

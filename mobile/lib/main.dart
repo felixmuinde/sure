@@ -17,6 +17,7 @@ import 'services/api_config.dart';
 import 'services/connectivity_service.dart';
 import 'services/log_service.dart';
 import 'services/preferences_service.dart';
+import 'services/update_notification_service.dart';
 
 // warm white background used throughout the light theme
 const Color _warmBackground = Color(0xFFFDFBF7);
@@ -199,6 +200,7 @@ class _AppWrapperState extends State<AppWrapper> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _checkBackendConfig();
     _initDeepLinks();
+    _checkForUpdates();
   }
 
   @override
@@ -260,6 +262,12 @@ class _AppWrapperState extends State<AppWrapper> with WidgetsBindingObserver {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       authProvider.handleSsoCallback(uri);
     }
+  }
+
+  Future<void> _checkForUpdates() async {
+    final svc = UpdateNotificationService();
+    await svc.initialize();
+    await svc.checkAndNotify();
   }
 
   Future<void> _checkBackendConfig() async {
