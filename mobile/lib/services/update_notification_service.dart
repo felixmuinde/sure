@@ -116,7 +116,7 @@ class UpdateNotificationService {
     );
     await _notifications.show(
       _notificationId,
-      'Update Available',
+      'New version available',
       'Chancen Companion $version is available on the Play Store.',
       details,
     );
