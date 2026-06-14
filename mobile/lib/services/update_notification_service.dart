@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
@@ -12,7 +13,7 @@ class UpdateNotificationService {
 
   final _notifications = FlutterLocalNotificationsPlugin();
 
-  Future<void> initialize() async {
+  Future<void> initialize(BuildContext context) async {
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     const ios = DarwinInitializationSettings(
       requestAlertPermission: false,
@@ -24,9 +25,42 @@ class UpdateNotificationService {
       onDidReceiveNotificationResponse: _onTap,
     );
 
-    await _notifications
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-        ?.requestNotificationsPermission();
+    final plugin = _notifications
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    if (plugin == null) return;
+
+    final granted = await plugin.areNotificationsEnabled() ?? false;
+    if (granted) return;
+
+    if (!context.mounted) return;
+    final proceed = await _showRationale(context);
+    if (proceed) await plugin.requestNotificationsPermission();
+  }
+
+  Future<bool> _showRationale(BuildContext context) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Stay up to date'),
+        content: const Text(
+          'Allow Chancen Companion to send you notifications so you know '
+          'when a new version is available.\n\n'
+          'If you deny, you won\'t be notified about updates and may miss '
+          'important improvements or bug fixes.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Not now'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Allow'),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
   }
 
   Future<void> checkAndNotify() async {
