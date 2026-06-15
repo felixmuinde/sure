@@ -66,11 +66,17 @@ class PagesController < ApplicationController
     render layout: "blank"
   end
 
+  COUNTRY_NAMES = { "rw" => "Rwanda", "za" => "South Africa", "gh" => "Ghana" }.freeze
+
   def privacy
-    render layout: "blank"
+    @country_name = COUNTRY_NAMES[params[:country]]
+    country = params[:country]
+    template = country && lookup_context.template_exists?("pages/privacy_#{country}", [], false) ? "pages/privacy_#{country}" : "pages/privacy"
+    render template, layout: "blank"
   end
 
   def terms
+    @country_name = COUNTRY_NAMES[params[:country]]
     render layout: "blank"
   end
 

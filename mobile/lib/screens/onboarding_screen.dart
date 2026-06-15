@@ -33,15 +33,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     {'name': 'Ghana',        'code': 'GH'},
   ];
 
-  static const _availableCountryCodes = {'KE'};
+  static const _availableCountryCodes = {'KE', 'RW', 'ZA', 'GH'};
 
   String get _selectedCountryName => _supportedCountries.firstWhere(
         (c) => c['code'] == _selectedCountryCode,
         orElse: () => _supportedCountries.first,
       )['name']!;
 
-  static String get _privacyUrl => '${ApiConfig.baseUrl}/privacy';
-  static String get _termsUrl => '${ApiConfig.baseUrl}/terms';
+  String get _privacyUrl => '${ApiConfig.baseUrl}/privacy/${_selectedCountryCode.toLowerCase()}';
+  String get _termsUrl => '${ApiConfig.baseUrl}/terms/${_selectedCountryCode.toLowerCase()}';
   static const _consentVersion = '1.0';
 
   @override
