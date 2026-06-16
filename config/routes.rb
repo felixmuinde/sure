@@ -546,6 +546,7 @@ Rails.application.routes.draw do
         post :chunks, on: :member, action: :create_chunk
         post :publish, on: :member
       end
+      resource :app_version, only: [ :show ], controller: :app_versions
       resource :usage, only: [ :show ], controller: :usage
       resource :balance_sheet, only: [ :show ], controller: :balance_sheet
       resource :family_settings, only: [ :show ], controller: :family_settings
