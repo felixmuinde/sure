@@ -20,6 +20,7 @@ import 'services/connectivity_service.dart';
 import 'services/log_service.dart';
 import 'services/preferences_service.dart';
 import 'services/telemetry_service.dart';
+import 'services/update_notification_service.dart';
 import 'theme/sure_theme.dart';
 
 void main() async {
@@ -116,6 +117,7 @@ class _AppWrapperState extends State<AppWrapper> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _checkBackendConfig();
     _initDeepLinks();
+    _checkForUpdates();
   }
 
   @override
@@ -151,6 +153,25 @@ class _AppWrapperState extends State<AppWrapper> with WidgetsBindingObserver {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     await authProvider.logout();
     if (mounted) setState(() => _isLocked = false);
+  }
+
+  Future<void> _checkForUpdates() async {
+    if (!mounted) return;
+    try {
+      final svc = UpdateNotificationService();
+      await svc.initialize(context);
+      await svc.checkAndNotify();
+    } catch (e, stackTrace) {
+      LogService.instance.warning(
+        'UpdateNotificationService',
+        'Update check skipped: ${e.runtimeType}',
+      );
+      unawaited(TelemetryService.instance.captureHandledException(
+        e,
+        stackTrace,
+        operation: 'app.update_check',
+      ));
+    }
   }
 
   void _initDeepLinks() {
