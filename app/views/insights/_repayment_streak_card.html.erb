@@ -1,0 +1,28 @@
+<%# locals: (loan_account:, repayment_streak:) %>
+<%
+  streak        = repayment_streak.to_i
+  has_streak    = loan_account && streak > 0
+  streak_color  = has_streak ? "text-orange-500" : "text-secondary"
+%>
+<div class="rounded-xl bg-container border border-primary p-5 shadow-[4px_4px_0_#84BD0030]">
+  <div class="flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3 min-w-0">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 <%= has_streak ? "bg-orange-50" : "bg-surface-inset" %>">
+        <%= icon("flame", class: has_streak ? "text-orange-500" : "text-secondary", size: "sm") %>
+      </div>
+      <div class="min-w-0">
+        <p class="font-bold text-primary"><%= t("insights.repayment_streak.title") %></p>
+        <p class="text-xs text-secondary"><%= t("insights.repayment_streak.subtitle") %></p>
+      </div>
+    </div>
+
+    <% if loan_account %>
+      <div class="text-right shrink-0">
+        <p class="text-3xl font-extrabold <%= streak_color %> privacy-sensitive"><%= streak %></p>
+        <p class="text-xs font-semibold <%= streak_color %>"><%= t("insights.repayment_streak.months", count: streak) %></p>
+      </div>
+    <% else %>
+      <em class="text-sm text-secondary not-italic shrink-0"><%= t("insights.coming_soon") %></em>
+    <% end %>
+  </div>
+</div>

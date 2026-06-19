@@ -18,7 +18,9 @@ en:
     isa_instalments:
       title: Instalments
       paid_so_far: Paid So Far
+      remaining: Instalments Remaining
       max_instalments: Maximum No. of Instalments
+      month_of: "Month %{current} of %{total}"
     isa_status:
       contract_signed: Graduated
       repaying: Repaying
@@ -26,4 +28,42 @@ en:
       service_fee_mode: Service Fee Mode
       completed: Completed
       defaulted: Defaulted
+    next_instalment:
+      title: Next Instalment
+      due_date_label: Due Date
+      amount_label: Amount Due
+      up_to_date: Up to date
+      overdue: Overdue
+      due_date_unavailable: Due date coming soon
+    arrears:
+      title_in_arrears: Your account has arrears
+      good_standing: Account in good standing
+      principal_months:
+        one: "%{count} month behind on principal"
+        other: "%{count} months behind on principal"
+      admin_months:
+        one: "%{count} month behind on admin fees"
+        other: "%{count} months behind on admin fees"
+      contact_prompt: Please contact your account manager for assistance.
+    total_repaid:
+      title: Your Repayment Achievement
+      headline_label: Total Repaid
+      encouragement: Every payment is a step toward completing your ISA.
+    repayment_streak:
+      title: Repayment Streak
+      subtitle: Consecutive months with a payment
+      months:
+        one: month streak
+        other: month streak
+    recent_transactions:
+      title: Recent Transactions
+      none: No transactions recorded yet.
+      purpose_default: Payment
+    isa_details:
+      title: ISA Details
+      isa_percentage_label: Income Share Percentage
+      isa_percentage_value: "You repay %{pct}% of your monthly income"
+      repayment_status_label: Current Status
+      currently_repaying: Currently repaying
+      below_threshold: "Below threshold — not currently repaying"
     coming_soon: Coming soon

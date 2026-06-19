@@ -1,0 +1,43 @@
+<%# locals: (isa_percentage:, is_employed_above_threshold:) %>
+<div class="rounded-xl bg-container border border-primary p-5 shadow-[4px_4px_0_#84BD0030]">
+  <div class="flex items-center gap-3 mb-4">
+    <div class="w-9 h-9 rounded-xl bg-[#84BD00]/10 flex items-center justify-center">
+      <%= icon("info", class: "text-[#84BD00]", size: "sm") %>
+    </div>
+    <span class="font-bold text-primary"><%= t("insights.isa_details.title") %></span>
+  </div>
+
+  <div class="space-y-4">
+    <div>
+      <p class="text-xs text-secondary mb-1"><%= t("insights.isa_details.isa_percentage_label") %></p>
+      <% if isa_percentage %>
+        <p class="font-semibold text-primary">
+          <%= t("insights.isa_details.isa_percentage_value", pct: isa_percentage) %>
+        </p>
+      <% else %>
+        <em class="text-sm text-secondary not-italic"><%= t("insights.coming_soon") %></em>
+      <% end %>
+    </div>
+
+    <hr class="border-primary" />
+
+    <div>
+      <p class="text-xs text-secondary mb-1"><%= t("insights.isa_details.repayment_status_label") %></p>
+      <% unless is_employed_above_threshold.nil? %>
+        <% if is_employed_above_threshold %>
+          <div class="flex items-center gap-2">
+            <%= icon("check-circle", color: :success, size: "sm") %>
+            <p class="font-semibold text-success text-sm"><%= t("insights.isa_details.currently_repaying") %></p>
+          </div>
+        <% else %>
+          <div class="flex items-center gap-2">
+            <%= icon("minus-circle", size: "sm") %>
+            <p class="font-semibold text-secondary text-sm"><%= t("insights.isa_details.below_threshold") %></p>
+          </div>
+        <% end %>
+      <% else %>
+        <em class="text-sm text-secondary not-italic"><%= t("insights.coming_soon") %></em>
+      <% end %>
+    </div>
+  </div>
+</div>

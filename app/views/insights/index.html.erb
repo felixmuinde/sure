@@ -7,22 +7,56 @@
   </div>
 <% end %>
 
-<div class="max-w-xl mx-auto space-y-3 pb-10">
+<div class="max-w-5xl mx-auto pb-10 space-y-4">
   <%= render "insights/ask_anything" %>
 
   <div class="pt-4 pb-1">
     <p class="text-base font-bold text-primary"><%= t("insights.index.my_account") %></p>
-    <p class="text-sm text-secondary"><%= t("insights.index.live_data_soon") %></p>
   </div>
 
-  <%= render "insights/isa_financing_card",
-       loan_account: @loan_account,
-       total_financed: @total_financed,
-       repayments_count: @repayments_count,
-       isa_status: @isa_status %>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+    <%# Left column — status and key actions %>
+    <div class="space-y-4">
+      <%= render "insights/next_instalment_card",
+           loan_account: @loan_account,
+           instalment_due_date: @instalment_due_date,
+           monthly_instalment: @monthly_instalment,
+           recent_transactions: @recent_transactions %>
 
-  <%= render "insights/isa_instalments_card",
-       loan_account: @loan_account,
-       repayments_count: @repayments_count,
-       max_instalments: @max_instalments %>
+      <%= render "insights/arrears_status_banner",
+           months_in_arrears_principal: @months_in_arrears_principal,
+           months_in_arrears_admin: @months_in_arrears_admin %>
+
+      <%= render "insights/isa_financing_card",
+           loan_account: @loan_account,
+           total_financed: @total_financed,
+           repayments_count: @repayments_count,
+           isa_status: @isa_status %>
+
+      <%= render "insights/isa_details_summary",
+           isa_percentage: @isa_percentage,
+           is_employed_above_threshold: @is_employed_above_threshold %>
+    </div>
+
+    <%# Right column — progress and history %>
+    <div class="space-y-4">
+      <%= render "insights/isa_instalments_card",
+           loan_account: @loan_account,
+           repayments_count: @repayments_count,
+           max_instalments: @max_instalments,
+           first_payment_due: @first_payment_due %>
+
+      <%= render "insights/total_repaid_card",
+           loan_account: @loan_account,
+           total_repaid: @total_repaid %>
+
+      <%= render "insights/repayment_streak_card",
+           loan_account: @loan_account,
+           repayment_streak: @repayment_streak %>
+
+      <%= render "insights/recent_transactions",
+           loan_account: @loan_account,
+           recent_transactions: @recent_transactions %>
+    </div>
+  </div>
 </div>

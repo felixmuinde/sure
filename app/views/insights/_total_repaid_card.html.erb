@@ -1,0 +1,21 @@
+<%# locals: (loan_account:, total_repaid:) %>
+<div class="rounded-xl bg-container border border-primary p-5 shadow-[4px_4px_0_#84BD0030]">
+  <div class="flex items-center gap-3 mb-4">
+    <div class="w-9 h-9 rounded-xl bg-[#84BD00]/10 flex items-center justify-center">
+      <%= icon("trophy", class: "text-[#84BD00]", size: "sm") %>
+    </div>
+    <span class="font-bold text-primary"><%= t("insights.total_repaid.title") %></span>
+  </div>
+
+  <% if loan_account && total_repaid.to_f > 0 %>
+    <p class="text-xs text-secondary mb-1"><%= t("insights.total_repaid.headline_label") %></p>
+    <p class="text-2xl font-extrabold text-[#84BD00] mb-2 privacy-sensitive">
+      <%= number_to_currency(total_repaid) %>
+    </p>
+    <p class="text-sm text-secondary"><%= t("insights.total_repaid.encouragement") %></p>
+  <% else %>
+    <p class="text-2xl font-extrabold">
+      <em class="font-normal text-base not-italic text-secondary"><%= t("insights.coming_soon") %></em>
+    </p>
+  <% end %>
+</div>

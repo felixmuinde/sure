@@ -1,0 +1,31 @@
+<%# locals: (loan_account:, recent_transactions:) %>
+<div class="rounded-xl bg-container border border-primary p-5 shadow-[4px_4px_0_#84BD0030]">
+  <div class="flex items-center gap-3 mb-4">
+    <div class="w-9 h-9 rounded-xl bg-[#84BD00]/10 flex items-center justify-center">
+      <%= icon("receipt", class: "text-[#84BD00]", size: "sm") %>
+    </div>
+    <span class="font-bold text-primary"><%= t("insights.recent_transactions.title") %></span>
+  </div>
+
+  <% if loan_account && recent_transactions&.any? %>
+    <div class="divide-y divide-primary -mx-5 px-5">
+      <% recent_transactions.each do |entry| %>
+        <div class="py-2.5 flex items-center justify-between gap-3">
+          <div class="min-w-0">
+            <p class="text-sm font-medium text-primary truncate">
+              <%= payment_purpose_label(entry.name) %>
+            </p>
+            <p class="text-xs text-secondary"><%= l(entry.date, format: :short) %></p>
+          </div>
+          <p class="text-sm font-semibold text-primary shrink-0 privacy-sensitive">
+            <%= number_to_currency(entry.amount.abs) %>
+          </p>
+        </div>
+      <% end %>
+    </div>
+  <% elsif loan_account %>
+    <p class="text-sm text-secondary italic"><%= t("insights.recent_transactions.none") %></p>
+  <% else %>
+    <p class="text-sm text-secondary italic"><%= t("insights.coming_soon") %></p>
+  <% end %>
+</div>
