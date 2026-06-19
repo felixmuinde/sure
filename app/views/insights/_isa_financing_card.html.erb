@@ -1,0 +1,50 @@
+<%# locals: (loan_account:, total_financed:, repayments_count:, isa_status:) %>
+<div class="rounded-xl bg-container border border-primary p-5 shadow-[4px_4px_0_#84BD0030]">
+  <div class="flex items-center justify-between mb-5">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-[#84BD00]/10 flex items-center justify-center">
+        <%= icon("landmark", class: "text-[#84BD00]", size: "sm") %>
+      </div>
+      <span class="font-bold text-primary"><%= t("insights.isa_financing.title") %></span>
+    </div>
+    <% if isa_status %>
+      <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#1F4834]/10 text-[#1F4834] dark:text-[#84BD00] dark:bg-[#84BD00]/10">
+        <%= t("insights.isa_status.#{isa_status}") %>
+      </span>
+    <% end %>
+  </div>
+
+  <p class="text-xs text-secondary mb-1"><%= t("insights.isa_financing.repayments_received") %></p>
+  <p class="text-2xl font-extrabold text-primary mb-5 privacy-sensitive">
+    <% if loan_account %>
+      <%= number_to_currency(total_financed) %>
+    <% else %>
+      <em class="text-secondary font-normal text-base not-italic"><%= t("insights.coming_soon") %></em>
+    <% end %>
+  </p>
+
+  <hr class="border-primary mb-4" />
+
+  <div class="grid grid-cols-2 gap-4">
+    <div>
+      <p class="text-xs text-secondary mb-1"><%= t("insights.isa_financing.repayments_label") %></p>
+      <p class="font-semibold text-primary privacy-sensitive">
+        <% if loan_account %>
+          <%= number_to_currency(total_financed) %>
+        <% else %>
+          <em class="text-secondary font-normal text-sm not-italic"><%= t("insights.coming_soon") %></em>
+        <% end %>
+      </p>
+    </div>
+    <div class="text-right">
+      <p class="text-xs text-secondary mb-1"><%= t("insights.isa_financing.total_financed") %></p>
+      <p class="font-semibold text-primary privacy-sensitive">
+        <% if loan_account %>
+          <%= loan_account.balance.format %>
+        <% else %>
+          <em class="text-secondary font-normal text-sm not-italic"><%= t("insights.coming_soon") %></em>
+        <% end %>
+      </p>
+    </div>
+  </div>
+</div>

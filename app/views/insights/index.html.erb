@@ -1,0 +1,28 @@
+<% content_for :page_header do %>
+  <div class="mb-6">
+    <h1 class="text-3xl font-extrabold tracking-tight text-primary">
+      <%= t("insights.index.greeting", name: Current.user.first_name) %>
+    </h1>
+    <p class="mt-1 text-base text-secondary"><%= t("insights.index.tagline") %></p>
+  </div>
+<% end %>
+
+<div class="max-w-xl mx-auto space-y-3 pb-10">
+  <%= render "insights/ask_anything" %>
+
+  <div class="pt-4 pb-1">
+    <p class="text-base font-bold text-primary"><%= t("insights.index.my_account") %></p>
+    <p class="text-sm text-secondary"><%= t("insights.index.live_data_soon") %></p>
+  </div>
+
+  <%= render "insights/isa_financing_card",
+       loan_account: @loan_account,
+       total_financed: @total_financed,
+       repayments_count: @repayments_count,
+       isa_status: @isa_status %>
+
+  <%= render "insights/isa_instalments_card",
+       loan_account: @loan_account,
+       repayments_count: @repayments_count,
+       max_instalments: @max_instalments %>
+</div>

@@ -1,0 +1,63 @@
+<%# locals: (loan_account:, repayments_count:, max_instalments:) %>
+<%
+  count         = loan_account ? (repayments_count || 0) : 0
+  progress      = max_instalments > 0 ? (count.to_f / max_instalments).clamp(0, 1) : 0
+  cx            = 38
+  cy            = 38
+  r             = 30
+  stroke        = 7
+  circumference = (2 * Math::PI * r).round(2)
+  dash_offset   = (circumference * (1 - progress)).round(2)
+%>
+<div class="rounded-xl bg-container border border-primary p-5 shadow-[4px_4px_0_#84BD0030]">
+  <div class="flex gap-5 items-start">
+    <svg width="76" height="76" viewBox="0 0 76 76" class="shrink-0" aria-hidden="true">
+      <circle cx="<%= cx %>" cy="<%= cy %>" r="<%= r %>" fill="none"
+              stroke="currentColor" class="text-surface-inset" stroke-width="<%= stroke %>"/>
+      <% if loan_account %>
+        <circle cx="<%= cx %>" cy="<%= cy %>" r="<%= r %>" fill="none"
+                stroke="#84BD00" stroke-width="<%= stroke %>" stroke-linecap="round"
+                stroke-dasharray="<%= circumference %>"
+                stroke-dashoffset="<%= dash_offset %>"
+                transform="rotate(-90 <%= cx %> <%= cy %>)"/>
+        <text x="<%= cx %>" y="<%= cy + 5 %>" text-anchor="middle"
+              font-size="11" font-weight="600" fill="currentColor" class="text-primary">
+          <%= count %>
+        </text>
+      <% else %>
+        <text x="<%= cx %>" y="<%= cy + 5 %>" text-anchor="middle"
+              font-size="10" font-style="italic" fill="currentColor" class="text-secondary">
+          Soon
+        </text>
+      <% end %>
+    </svg>
+
+    <div class="flex-1 min-w-0">
+      <div class="flex items-center gap-2 mb-4">
+        <div class="w-9 h-9 rounded-xl bg-[#84BD00]/10 flex items-center justify-center">
+          <%= icon("calendar", class: "text-[#84BD00]", size: "sm") %>
+        </div>
+        <span class="font-bold text-primary"><%= t("insights.isa_instalments.title") %></span>
+      </div>
+
+      <hr class="border-primary mb-3" />
+
+      <div class="space-y-2">
+        <div>
+          <p class="text-xs text-secondary"><%= t("insights.isa_instalments.paid_so_far") %></p>
+          <p class="font-semibold text-primary privacy-sensitive">
+            <% if loan_account %>
+              <%= count %>
+            <% else %>
+              <em class="text-secondary font-normal text-sm not-italic"><%= t("insights.coming_soon") %></em>
+            <% end %>
+          </p>
+        </div>
+        <div>
+          <p class="text-xs text-secondary"><%= t("insights.isa_instalments.max_instalments") %></p>
+          <p class="font-semibold text-primary"><%= max_instalments %></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

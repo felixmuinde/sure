@@ -4,6 +4,7 @@ en:
     brand_name: "%{brand_name}"
     product_name: "%{product_name}"
   global:
+    coming_soon: "Coming soon"
     expand: "Expand"
   activerecord:
     errors:

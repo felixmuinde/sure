@@ -1,0 +1,29 @@
+---
+en:
+  insights:
+    index:
+      title: Insights
+      greeting: "Hi, %{name}!"
+      tagline: Your partner from learning to earning.
+      my_account: My Account
+      live_data_soon: "Live data · Coming soon"
+    ask_anything:
+      title: Ask me anything
+      subtitle: Get instant answers about your ISA
+    isa_financing:
+      title: ISA Financing
+      repayments_received: Repayments Received
+      repayments_label: Repayments Received
+      total_financed: Total Financed
+    isa_instalments:
+      title: Instalments
+      paid_so_far: Paid So Far
+      max_instalments: Maximum No. of Instalments
+    isa_status:
+      contract_signed: Graduated
+      repaying: Repaying
+      paused: Paused
+      service_fee_mode: Service Fee Mode
+      completed: Completed
+      defaulted: Defaulted
+    coming_soon: Coming soon
