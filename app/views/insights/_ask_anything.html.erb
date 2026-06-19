@@ -1,8 +1,6 @@
-<%= link_to chats_path, class: "block rounded-xl border border-[#986EF9] bg-container p-4 shadow-[4px_4px_0_#986EF966] transition-opacity hover:opacity-90" do %>
+<%= link_to chats_path, class: "block rounded-xl border border-[#986EF9] bg-container p-4 shadow-border-xs transition-opacity hover:opacity-90" do %>
   <div class="flex items-center gap-4">
-    <div class="w-10 h-10 rounded-full bg-[#986EF9]/10 flex items-center justify-center shrink-0">
-      <%= icon("message-circle", class: "text-[#986EF9]", size: "sm") %>
-    </div>
+    <%= render DS::FilledIcon.new(icon: "message-circle", hex_color: "#986EF9", size: "lg", rounded: true) %>
     <div class="flex-1 min-w-0">
       <p class="font-bold text-[#986EF9]"><%= t("insights.ask_anything.title") %></p>
       <p class="text-sm text-secondary"><%= t("insights.ask_anything.subtitle") %></p>

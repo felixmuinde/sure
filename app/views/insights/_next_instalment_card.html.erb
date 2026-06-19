@@ -6,12 +6,10 @@
     up_to_date   = !overdue || paid_this_month
   end
 %>
-<div class="rounded-xl bg-container border border-primary p-5 shadow-[4px_4px_0_#84BD0030]">
+<div class="rounded-xl bg-container border border-primary p-5 shadow-border-xs">
   <div class="flex items-center justify-between mb-4">
     <div class="flex items-center gap-3">
-      <div class="w-9 h-9 rounded-xl bg-[#84BD00]/10 flex items-center justify-center">
-        <%= icon("banknote", class: "text-[#84BD00]", size: "sm") %>
-      </div>
+      <%= render DS::FilledIcon.new(icon: "banknote", hex_color: "#84BD00", size: "lg") %>
       <span class="font-bold text-primary"><%= t("insights.next_instalment.title") %></span>
     </div>
     <% if loan_account && instalment_due_date %>
@@ -29,7 +27,7 @@
 
   <% if loan_account && instalment_due_date %>
     <p class="text-xs text-secondary mb-1"><%= t("insights.next_instalment.due_date_label") %></p>
-    <p class="text-2xl font-extrabold mb-3 privacy-sensitive <%= (overdue && !up_to_date) ? "text-destructive" : "text-primary" %>">
+    <p class="text-2xl font-semibold mb-3 privacy-sensitive <%= (overdue && !up_to_date) ? "text-destructive" : "text-primary" %>">
       <%= l(instalment_due_date, format: :long) %>
     </p>
     <% if monthly_instalment %>
@@ -39,10 +37,10 @@
   <% else %>
     <% if loan_account && monthly_instalment %>
       <p class="text-xs text-secondary mb-1"><%= t("insights.next_instalment.amount_label") %></p>
-      <p class="text-2xl font-extrabold text-primary mb-2 privacy-sensitive"><%= monthly_instalment.format %></p>
+      <p class="text-2xl font-semibold text-primary mb-2 privacy-sensitive"><%= monthly_instalment.format %></p>
       <p class="text-xs text-secondary"><%= t("insights.next_instalment.due_date_unavailable") %></p>
     <% else %>
-      <p class="text-2xl font-extrabold text-primary">
+      <p class="text-2xl font-semibold text-primary">
         <em class="font-normal text-base not-italic text-secondary"><%= t("insights.coming_soon") %></em>
       </p>
     <% end %>

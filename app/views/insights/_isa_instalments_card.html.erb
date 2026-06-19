@@ -16,7 +16,7 @@
     months_elapsed = months_elapsed.clamp(1, max_instalments)
   end
 %>
-<div class="rounded-xl bg-container border border-primary p-5 shadow-[4px_4px_0_#84BD0030]">
+<div class="rounded-xl bg-container border border-primary p-5 shadow-border-xs">
   <div class="flex gap-5 items-start">
     <div class="shrink-0 flex flex-col items-center gap-1">
       <svg width="76" height="76" viewBox="0 0 76 76" aria-hidden="true">
@@ -48,9 +48,7 @@
 
     <div class="flex-1 min-w-0">
       <div class="flex items-center gap-2 mb-4">
-        <div class="w-9 h-9 rounded-xl bg-[#84BD00]/10 flex items-center justify-center">
-          <%= icon("calendar", class: "text-[#84BD00]", size: "sm") %>
-        </div>
+        <%= render DS::FilledIcon.new(icon: "calendar", hex_color: "#84BD00", size: "lg") %>
         <span class="font-bold text-primary"><%= t("insights.isa_instalments.title") %></span>
       </div>
 
