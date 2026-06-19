@@ -40,7 +40,7 @@
       <p class="text-xs text-secondary mb-1"><%= t("insights.isa_financing.total_financed") %></p>
       <p class="font-semibold text-primary privacy-sensitive">
         <% if loan_account %>
-          <%= loan_account.balance.format %>
+          <%= loan_account.balance_money.format %>
         <% else %>
           <em class="text-secondary font-normal text-sm not-italic"><%= t("insights.coming_soon") %></em>
         <% end %>
