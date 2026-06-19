@@ -18,6 +18,8 @@ class ChatProvider with ChangeNotifier {
   Timer? _pollingTimer;
   DateTime? _pollingStartTime;
   bool _isPollingRequestInFlight = false;
+  bool _hasMoreMessages = false;
+  bool _isLoadingOlderMessages = false;
 
   static const _pollingTimeout = Duration(seconds: 20);
 
@@ -37,6 +39,8 @@ class ChatProvider with ChangeNotifier {
   bool get isWaitingForResponse => _isWaitingForResponse;
   bool get isPolling => _pollingTimer != null;
   String? get errorMessage => _errorMessage;
+  bool get hasMoreMessages => _hasMoreMessages;
+  bool get isLoadingOlderMessages => _isLoadingOlderMessages;
 
   /// Fetch list of chats
   Future<void> fetchChats({
@@ -91,6 +95,7 @@ class ChatProvider with ChangeNotifier {
 
       if (result['success'] == true) {
         _currentChat = result['chat'] as Chat;
+        _hasMoreMessages = result['has_more'] as bool? ?? false;
         _errorMessage = null;
       } else {
         _errorMessage = result['error'] ?? 'Failed to fetch chat';
@@ -268,16 +273,10 @@ class ChatProvider with ChangeNotifier {
           _chats[index] = updatedChat;
         }
 
-        // Update current chat if it's the same.
-        // Preserve existing messages — the title-update response may omit them.
+        // Update current chat title but always preserve the locally-loaded
+        // message history (including any pages fetched via infinite scroll).
         if (_currentChat != null && _currentChat!.id == chatId) {
-          final Chat newChat;
-          if (updatedChat.messages.isEmpty) {
-            newChat = updatedChat.copyWith(messages: _currentChat!.messages);
-          } else {
-            newChat = updatedChat;
-          }
-          _currentChat = newChat;
+          _currentChat = updatedChat.copyWith(messages: _currentChat!.messages);
         }
 
         notifyListeners();
@@ -406,43 +405,42 @@ class ChatProvider with ChangeNotifier {
 
         if (_currentChat == null || _currentChat!.id != chatId) return;
 
-        final oldMessages = _currentChat!.messages;
-        final newMessages = updatedChat.messages;
-        final oldMessageCount = oldMessages.length;
-        final newMessageCount = newMessages.length;
+        final local = _currentChat!.messages;
+        final serverMessages = updatedChat.messages; // newest page
 
         final oldContentLengthById = <String, int>{};
-        for (final m in oldMessages) {
+        for (final m in local) {
           if (m.isAssistant) oldContentLengthById[m.id] = m.content.length;
         }
 
-        bool shouldUpdate = false;
+        // Merge: keep older history loaded via infinite scroll + replace server page.
+        final serverIds = {for (final m in serverMessages) m.id};
+        final localHistory = serverMessages.isNotEmpty
+            ? local.where((m) =>
+                !serverIds.contains(m.id) &&
+                m.createdAt.isBefore(serverMessages.first.createdAt)).toList()
+            : local;
 
-        // New messages added
-        if (newMessageCount > oldMessageCount) {
-          shouldUpdate = true;
-          _lastAssistantContentLength = null;
-        } else if (newMessageCount == oldMessageCount) {
-          // Same count: check if any assistant message has more content
-          for (final m in newMessages) {
-            if (m.isAssistant) {
-              final oldLen = oldContentLengthById[m.id] ?? 0;
-              if (m.content.length > oldLen) {
-                shouldUpdate = true;
-                break;
-              }
-            }
-          }
-        }
+        final mergedMessages = [...localHistory, ...serverMessages];
+        mergedMessages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
-        if (shouldUpdate) {
-          _currentChat = updatedChat;
+        final localIds = {for (final m in local) m.id};
+        final hasNewMessages = serverMessages.any((m) => !localIds.contains(m.id));
+        if (hasNewMessages) _lastAssistantContentLength = null;
+
+        final hasContentGrowth = serverMessages.any((m) {
+          if (!m.isAssistant) return false;
+          return m.content.length > (oldContentLengthById[m.id] ?? 0);
+        });
+
+        if (hasNewMessages || hasContentGrowth) {
+          _currentChat = updatedChat.copyWith(messages: mergedMessages);
           notifyListeners();
         }
 
         if (updatedChat.error != null && updatedChat.error!.isNotEmpty) {
-          if (!shouldUpdate) {
-            _currentChat = updatedChat;
+          if (!hasNewMessages && !hasContentGrowth) {
+            _currentChat = updatedChat.copyWith(messages: mergedMessages);
           }
           _stopPolling();
           _errorMessage = updatedChat.error;
@@ -495,9 +493,47 @@ class ChatProvider with ChangeNotifier {
     }
   }
 
+  /// Load the page of messages older than the current oldest visible message.
+  Future<void> loadOlderMessages({required String accessToken}) async {
+    if (_currentChat == null || _isLoadingOlderMessages || !_hasMoreMessages) return;
+
+    final oldest = _currentChat!.messages.firstOrNull;
+    if (oldest == null) return;
+
+    _isLoadingOlderMessages = true;
+    notifyListeners();
+
+    try {
+      final result = await _chatService.getChat(
+        accessToken: accessToken,
+        chatId: _currentChat!.id,
+        beforeId: oldest.id,
+      );
+
+      if (result['success'] == true) {
+        final olderMessages = (result['chat'] as Chat).messages;
+        _hasMoreMessages = result['has_more'] as bool? ?? false;
+
+        final existingIds = {for (final m in _currentChat!.messages) m.id};
+        final newOlder = olderMessages.where((m) => !existingIds.contains(m.id)).toList();
+
+        final merged = [...newOlder, ..._currentChat!.messages];
+        merged.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+        _currentChat = _currentChat!.copyWith(messages: merged);
+      }
+    } catch (e) {
+      _log.warning('ChatProvider', 'loadOlderMessages failed: ${e.runtimeType}');
+    } finally {
+      _isLoadingOlderMessages = false;
+      notifyListeners();
+    }
+  }
+
   /// Clear current chat
   void clearCurrentChat() {
     _currentChat = null;
+    _hasMoreMessages = false;
+    _isLoadingOlderMessages = false;
     _stopPolling();
     notifyListeners();
   }

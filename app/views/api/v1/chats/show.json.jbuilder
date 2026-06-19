@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 json.partial! "chat", chat: @chat
+json.has_more @has_more
 
 json.messages @messages do |message|
   json.id message.id
@@ -23,11 +24,3 @@ json.messages @messages do |message|
   end
 end
 
-if @pagy
-  json.pagination do
-    json.page @pagy.page
-    json.per_page @pagy.vars[:items]
-    json.total_count @pagy.count
-    json.total_pages @pagy.pages
-  end
-end

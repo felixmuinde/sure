@@ -61,16 +61,17 @@ class ChatService {
     }
   }
 
-  /// Get a specific chat with messages
+  /// Get a specific chat with messages.
+  /// Pass [beforeId] to fetch a page of messages older than that message ID.
   Future<Map<String, dynamic>> getChat({
     required String accessToken,
     required String chatId,
-    int page = 1,
-    int perPage = 50,
+    String? beforeId,
   }) async {
     try {
+      final query = beforeId != null ? '?before_id=$beforeId' : '';
       final url = Uri.parse(
-        '${ApiConfig.baseUrl}/api/v1/chats/$chatId?page=$page&per_page=$perPage',
+        '${ApiConfig.baseUrl}/api/v1/chats/$chatId$query',
       );
 
       final response = await http.get(
@@ -81,10 +82,12 @@ class ChatService {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         final chat = Chat.fromJson(responseData);
+        final hasMore = responseData['has_more'] as bool? ?? false;
 
         return {
           'success': true,
           'chat': chat,
+          'has_more': hasMore,
         };
       } else if (response.statusCode == 401) {
         return {

@@ -41,6 +41,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   void initState() {
     super.initState();
     _chatId = widget.chatId;
+    _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _chatProvider = Provider.of<ChatProvider>(context, listen: false);
@@ -57,6 +58,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     if (_listenerAdded && _chatProvider != null) {
       _chatProvider!.removeListener(_onChatChanged);
       _chatProvider = null;
@@ -68,23 +70,28 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   }
 
   void _onChatChanged() {
-    if (!mounted) return;
-    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
-    if (chatProvider.isWaitingForResponse || chatProvider.isSendingMessage || chatProvider.isPolling) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _scrollToBottom();
-      });
+    // reverse: true keeps the newest messages anchored to the bottom automatically.
+    // No manual scroll needed — new items at index 0 are always in view at pixels=0.
+  }
+
+  // Triggered when the user scrolls near the top of the reversed list (older messages).
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final pos = _scrollController.position;
+    if (pos.pixels >= pos.maxScrollExtent - 300) {
+      _loadOlderMessages();
     }
   }
 
-  void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    }
+  Future<void> _loadOlderMessages() async {
+    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+    if (!chatProvider.hasMoreMessages || chatProvider.isLoadingOlderMessages) return;
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final accessToken = await authProvider.getValidAccessToken();
+    if (accessToken == null || !mounted) return;
+
+    await chatProvider.loadOlderMessages(accessToken: accessToken);
   }
 
   Future<void> _sendSuggestedQuestion(String question) async {
@@ -103,11 +110,6 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
     // Skip fetch if the provider already has this chat loaded (e.g. just created).
     if (!forceRefresh && chatProvider.currentChat?.id == _chatId) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _scrollController.hasClients) {
-          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-        }
-      });
       return;
     }
 
@@ -121,12 +123,6 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       accessToken: accessToken,
       chatId: _chatId!,
     );
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && _scrollController.hasClients) {
-        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-      }
-    });
   }
 
   Future<void> _sendMessage() async {
@@ -186,10 +182,11 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       }
     }
 
+    // Scroll to bottom (pixels=0 in reverse mode) in case the user had scrolled up.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
+      if (mounted && _scrollController.hasClients) {
         _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
+          0,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
@@ -332,16 +329,21 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           }
 
           final allMessages = chatProvider.currentChat?.messages ?? [];
-          // While waiting for the AI response, hide the last (partial/streaming)
-          // assistant message so the typing indicator shows instead of partial content.
-          // The full response is revealed once polling detects stable content.
+          // While waiting, hide the streaming assistant message so the typing
+          // indicator shows instead of partial content.
           final messages = chatProvider.isWaitingForResponse
               ? allMessages.where((m) {
                   return !(m.isAssistant && m == allMessages.lastOrNull);
                 }).toList()
               : allMessages;
+          // Reverse so newest message is at index 0 (bottom) for reverse ListView.
+          final reversedMessages = messages.reversed.toList();
           final firstName =
               Provider.of<AuthProvider>(context, listen: true).user?.firstName;
+
+          final isWaiting = chatProvider.isWaitingForResponse;
+          final showLoadMore = chatProvider.hasMoreMessages || chatProvider.isLoadingOlderMessages;
+          final typingOffset = isWaiting ? 1 : 0;
 
           return Column(
             children: [
@@ -349,7 +351,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 child: messages.isEmpty &&
                         !chatProvider.isLoading &&
                         !chatProvider.isSendingMessage &&
-                        !chatProvider.isWaitingForResponse
+                        !isWaiting
                     ? _EmptyState(
                         firstName: firstName,
                         isSending: false,
@@ -357,17 +359,25 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                       )
                     : ListView.builder(
                         controller: _scrollController,
+                        reverse: true,
                         padding: const EdgeInsets.all(16),
-                        itemCount: messages.length +
-                            (chatProvider.isWaitingForResponse ? 1 : 0),
+                        itemCount: typingOffset +
+                            reversedMessages.length +
+                            (showLoadMore ? 1 : 0),
                         itemBuilder: (context, index) {
-                          if (index == messages.length) {
+                          // Index 0 = visual bottom: typing indicator while waiting.
+                          if (isWaiting && index == 0) {
                             return const _TypingIndicatorBubble();
                           }
-                          return _MessageBubble(
-                            message: messages[index],
-                            formatTime: _formatTime,
-                          );
+                          final msgIndex = index - typingOffset;
+                          if (msgIndex < reversedMessages.length) {
+                            return _MessageBubble(
+                              message: reversedMessages[msgIndex],
+                              formatTime: _formatTime,
+                            );
+                          }
+                          // Highest index = visual top: load-more spinner.
+                          return const _LoadMoreIndicator();
                         },
                       ),
               ),
@@ -632,6 +642,18 @@ class _EmptyState extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _LoadMoreIndicator extends StatelessWidget {
+  const _LoadMoreIndicator();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 16),
+      child: Center(child: CircularProgressIndicator()),
     );
   }
 }

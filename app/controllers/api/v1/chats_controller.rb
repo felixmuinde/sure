@@ -13,7 +13,17 @@ class Api::V1::ChatsController < Api::V1::BaseController
 
   def show
     return unless @chat
-    @pagy, @messages = pagy(@chat.messages.ordered, items: 50)
+
+    page_size = 20
+
+    @messages = if params[:before_id].present?
+      @chat.messages.ordered.where("messages.id < ?", params[:before_id]).last(page_size)
+    else
+      @chat.messages.ordered.last(page_size)
+    end
+
+    @has_more = @messages.any? &&
+      @chat.messages.where("id < ?", @messages.first.id).exists?
   end
 
   def create
