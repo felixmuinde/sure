@@ -14,7 +14,7 @@
     <p class="text-base font-bold text-primary"><%= t("insights.index.my_account") %></p>
   </div>
 
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
     <%# Left column — status and key actions %>
     <div class="space-y-4">
       <%= render "insights/next_instalment_card",
@@ -46,13 +46,16 @@
            max_instalments: @max_instalments,
            first_payment_due: @first_payment_due %>
 
-      <%= render "insights/total_repaid_card",
-           loan_account: @loan_account,
-           total_repaid: @total_repaid %>
+      <%# Pair the two compact stat cards side-by-side %>
+      <div class="grid grid-cols-2 gap-4">
+        <%= render "insights/total_repaid_card",
+             loan_account: @loan_account,
+             total_repaid: @total_repaid %>
 
-      <%= render "insights/repayment_streak_card",
-           loan_account: @loan_account,
-           repayment_streak: @repayment_streak %>
+        <%= render "insights/repayment_streak_card",
+             loan_account: @loan_account,
+             repayment_streak: @repayment_streak %>
+      </div>
 
       <%= render "insights/recent_transactions",
            loan_account: @loan_account,
