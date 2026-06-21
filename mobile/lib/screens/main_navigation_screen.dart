@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
+import 'budget_screen.dart';
 import 'chat_list_screen.dart';
 import 'dashboard_screen.dart';
 import 'intro_screen.dart';
@@ -34,6 +35,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     screens.add(const ChatListScreen());
 
     if (!introLayout) {
+      screens.add(const BudgetScreen());
       screens.add(const MoreScreen());
     }
 
@@ -68,7 +70,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   Future<void> _handleSelectSettings(AuthProvider authProvider, bool introLayout) async {
-    final settingsIndex = introLayout ? 2 : 3;
+    final settingsIndex = introLayout ? 2 : 4;
     await _handleDestinationSelected(settingsIndex, authProvider, introLayout);
   }
 
@@ -104,6 +106,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
 
     if (!introLayout) {
+      destinations.add(
+        const NavigationDestination(
+          icon: Icon(Icons.account_balance_wallet_outlined),
+          selectedIcon: Icon(Icons.account_balance_wallet),
+          label: 'Budget',
+        ),
+      );
       destinations.add(
         const NavigationDestination(
           icon: Icon(Icons.more_horiz),
