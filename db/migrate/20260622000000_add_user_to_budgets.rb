@@ -1,4 +1,4 @@
-class AddUserToBudgets < ActiveRecord::Migration[8.1]
+class AddUserToBudgets < ActiveRecord::Migration[7.2]
   def change
     add_reference :budgets, :user, type: :uuid, null: false, foreign_key: true
 
