@@ -6,7 +6,7 @@ class ApplyAllRulesJobTest < ActiveJob::TestCase
   setup do
     @family = families(:empty)
     @account = @family.accounts.create!(name: "Test Account", balance: 1000, currency: "USD", accountable: Depository.new)
-    @groceries_category = @family.categories.create!(name: "Groceries")
+    @groceries_category = @family.categories.create!(name: "Groceries", user: users(:empty))
   end
 
   test "applies all rules for a family" do

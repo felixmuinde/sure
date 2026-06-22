@@ -58,11 +58,10 @@ class SimplefinAccount::Transactions::Processor
 
     def family_categories
       @family_categories ||= begin
-        if account.family.categories.none?
-          account.family.categories.bootstrap!
-        end
-
-        account.family.categories
+        return account.family.categories.none if account.owner.nil?
+        categories = account.family.categories.where(user: account.owner)
+        categories.bootstrap! if categories.none?
+        categories
       end
     end
 

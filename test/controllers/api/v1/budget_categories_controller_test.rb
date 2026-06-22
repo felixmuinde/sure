@@ -32,7 +32,7 @@ class Api::V1::BudgetCategoriesControllerTest < ActionDispatch::IntegrationTest
     )
 
     other_family = families(:empty)
-    other_category = other_family.categories.create!(name: "Other Food", color: "#123456")
+    other_category = other_family.categories.create!(name: "Other Food", color: "#123456", user: users(:empty))
     other_budget = other_family.budgets.create!(
       user: users(:empty),
       start_date: 6.months.ago.beginning_of_month.to_date,

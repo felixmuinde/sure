@@ -156,7 +156,7 @@ class Api::V1::CategoriesControllerTest < ActionDispatch::IntegrationTest
     other_family_category = families(:empty).categories.create!(
       name: "Other Family Category",
       color: "#FF0000",
-      classification_unused: "expense"
+      user: users(:empty)
     )
 
     get "/api/v1/categories/#{other_family_category.id}", params: {}, headers: api_headers(read_only_api_key)
@@ -245,7 +245,7 @@ class Api::V1::CategoriesControllerTest < ActionDispatch::IntegrationTest
     other_family_category = families(:empty).categories.create!(
       name: "External Parent",
       color: "#FF0000",
-      classification_unused: "expense"
+      user: users(:empty)
     )
 
     post "/api/v1/categories",
@@ -263,7 +263,8 @@ class Api::V1::CategoriesControllerTest < ActionDispatch::IntegrationTest
       name: "Existing Child",
       color: "#22c55e",
       lucide_icon: "shapes",
-      parent: @category
+      parent: @category,
+      user: @user
     )
 
     post "/api/v1/categories",

@@ -24,7 +24,8 @@ class Family::DataExporterTest < ActiveSupport::TestCase
 
     @category = @family.categories.create!(
       name: "Test Category",
-      color: "#FF0000"
+      color: "#FF0000",
+      user: users(:family_admin)
     )
 
     @tag = @family.tags.create!(
@@ -332,7 +333,8 @@ class Family::DataExporterTest < ActiveSupport::TestCase
 
     other_category = @other_family.categories.create!(
       name: "Other Family Category",
-      color: "#0000FF"
+      color: "#0000FF",
+      user: users(:empty)
     )
 
     zip_data = @exporter.generate_export

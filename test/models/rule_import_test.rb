@@ -6,7 +6,8 @@ class RuleImportTest < ActiveSupport::TestCase
     @category = @family.categories.create!(
       name: "Groceries",
       color: "#407706",
-      lucide_icon: "shopping-basket"
+      lucide_icon: "shopping-basket",
+      user: users(:family_admin)
     )
     @csv = <<~CSV
       name,resource_type,active,effective_date,conditions,actions

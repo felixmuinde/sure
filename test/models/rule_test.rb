@@ -7,7 +7,7 @@ class RuleTest < ActiveSupport::TestCase
     @family = families(:empty)
     @account = @family.accounts.create!(name: "Rule test", balance: 1000, currency: "USD", accountable: Depository.new)
     @whole_foods_merchant = @family.merchants.create!(name: "Whole Foods", type: "FamilyMerchant")
-    @groceries_category = @family.categories.create!(name: "Groceries")
+    @groceries_category = @family.categories.create!(name: "Groceries", user: users(:empty))
   end
 
   test "basic rule" do
@@ -242,7 +242,7 @@ class RuleTest < ActiveSupport::TestCase
     transaction_entry2.update!(notes: "Personal expense")
 
     # Rule to categorize transactions with "business" in notes
-    business_category = @family.categories.create!(name: "Business")
+    business_category = @family.categories.create!(name: "Business", user: users(:empty))
     rule = Rule.create!(
       family: @family,
       resource_type: "transaction",

@@ -135,9 +135,11 @@ class Transaction < ApplicationRecord
 
   def set_category!(category)
     if category.is_a?(String)
-      category = entry.account.family.categories.find_or_create_by!(
-        name: category
-      )
+      owner = entry.account.owner
+      category = entry.account.family.categories.where(user: owner).find_or_create_by!(name: category) do |c|
+        c.color = Category::COLORS.sample
+        c.lucide_icon = Category.suggested_icon(category)
+      end
     end
 
     update!(category: category)

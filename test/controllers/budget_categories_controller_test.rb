@@ -14,19 +14,22 @@ class BudgetCategoriesControllerTest < ActionDispatch::IntegrationTest
       name: "Bills controller test",
       family: @family,
       color: "#4da568",
-      lucide_icon: "house"
+      lucide_icon: "house",
+      user: users(:family_admin)
     )
 
     @electric_category = Category.create!(
       name: "Electric controller test",
       parent: @parent_category,
-      family: @family
+      family: @family,
+      user: users(:family_admin)
     )
 
     @water_category = Category.create!(
       name: "Water controller test",
       parent: @parent_category,
-      family: @family
+      family: @family,
+      user: users(:family_admin)
     )
 
     @parent_budget_category = BudgetCategory.create!(

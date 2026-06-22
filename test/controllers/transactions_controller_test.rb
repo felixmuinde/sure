@@ -216,7 +216,7 @@ end
     family = families(:empty)
     sign_in users(:empty)
     account = family.accounts.create! name: "Test", balance: 0, currency: "USD", accountable: Depository.new
-    category = family.categories.create! name: "Food", color: "#ff0000"
+    category = family.categories.create! name: "Food", color: "#ff0000", user: users(:empty)
 
     create_transaction(account: account, amount: 100, category: category)
 

@@ -3,6 +3,7 @@ class Category < ApplicationRecord
   has_many :import_mappings, as: :mappable, dependent: :destroy, class_name: "Import::Mapping"
 
   belongs_to :family
+  belongs_to :user
 
   has_many :budget_categories, dependent: :destroy
   has_many :subcategories, class_name: "Category", foreign_key: :parent_id, dependent: :nullify
@@ -10,7 +11,7 @@ class Category < ApplicationRecord
 
   validates :name, :color, :lucide_icon, :family, presence: true
   validates :color, format: { with: /\A#[0-9A-Fa-f]{6}\z/ }
-  validates :name, uniqueness: { scope: :family_id }
+  validates :name, uniqueness: { scope: %i[family_id user_id] }
 
   validate :category_level_limit
 

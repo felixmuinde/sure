@@ -8,9 +8,9 @@ class TransactionsController < ApplicationController
     prefill_params_from_duplicate!
     super
     apply_duplicate_attributes!
-    @income_categories = Current.family.categories.incomes.alphabetically
-    @expense_categories = Current.family.categories.expenses.alphabetically
-    @categories = Current.family.categories.alphabetically
+    @income_categories = Current.family.categories.where(user: Current.user).incomes.alphabetically
+    @expense_categories = Current.family.categories.where(user: Current.user).expenses.alphabetically
+    @categories = Current.family.categories.where(user: Current.user).alphabetically
   end
 
   def index

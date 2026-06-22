@@ -8,7 +8,7 @@ class Rule::ActionTest < ActiveSupport::TestCase
     @transaction_rule = rules(:one)
     @account = @family.accounts.create!(name: "Rule test", balance: 1000, currency: "USD", accountable: Depository.new)
 
-    @grocery_category = @family.categories.create!(name: "Grocery")
+    @grocery_category = @family.categories.create!(name: "Grocery", user: users(:family_admin))
     @whole_foods_merchant = @family.merchants.create!(name: "Whole Foods", type: "FamilyMerchant")
 
     # Some sample transactions to work with

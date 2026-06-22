@@ -17,6 +17,6 @@ class Category::DropdownsController < ApplicationController
     end
 
     def categories_scope
-      Current.family.categories.alphabetically
+      Current.family.categories.where(user: Current.user).alphabetically
     end
 end

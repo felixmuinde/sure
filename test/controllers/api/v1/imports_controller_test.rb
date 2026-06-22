@@ -64,7 +64,8 @@ class Api::V1::ImportsControllerTest < ActionDispatch::IntegrationTest
     @diagnostic_category = @family.categories.create!(
       name: @diagnostic_category_name,
       color: "#407706",
-      lucide_icon: "shopping-basket"
+      lucide_icon: "shopping-basket",
+      user: @user
     )
     Import::CategoryMapping.create!(
       import: @diagnostic_import,
@@ -270,7 +271,8 @@ class Api::V1::ImportsControllerTest < ActionDispatch::IntegrationTest
     @family.categories.create!(
       name: "Groceries",
       color: "#407706",
-      lucide_icon: "shopping-basket"
+      lucide_icon: "shopping-basket",
+      user: @user
     )
 
     csv_content = <<~CSV

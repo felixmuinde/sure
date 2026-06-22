@@ -9,7 +9,7 @@ class Api::V1::CategoriesController < Api::V1::BaseController
 
   def index
     family = current_resource_owner.family
-    categories_query = family.categories.includes(:parent, :subcategories).alphabetically
+    categories_query = family.categories.where(user: current_resource_owner).includes(:parent, :subcategories).alphabetically
 
     # Apply filters
     categories_query = apply_filters(categories_query)
@@ -50,14 +50,14 @@ class Api::V1::CategoriesController < Api::V1::BaseController
     family = current_resource_owner.family
     attrs = category_params
 
-    if attrs[:parent_id].present? && !family.categories.exists?(id: attrs[:parent_id])
+    if attrs[:parent_id].present? && !family.categories.where(user: current_resource_owner).exists?(id: attrs[:parent_id])
       return render json: {
         error: "unprocessable_entity",
         message: "Parent must be a category in your family"
       }, status: :unprocessable_entity
     end
 
-    @category = family.categories.new(attrs)
+    @category = family.categories.new(attrs.merge(user: current_resource_owner))
     @category.lucide_icon = Category.suggested_icon(@category.name) if @category.lucide_icon.blank?
 
     if @category.save
@@ -74,7 +74,7 @@ class Api::V1::CategoriesController < Api::V1::BaseController
 
     def set_category
       family = current_resource_owner.family
-      @category = family.categories.includes(:parent, :subcategories).find(params[:id])
+      @category = family.categories.where(user: current_resource_owner).includes(:parent, :subcategories).find(params[:id])
     rescue ActiveRecord::RecordNotFound
       render json: {
         error: "not_found",

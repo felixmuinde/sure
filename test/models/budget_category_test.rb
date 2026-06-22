@@ -10,20 +10,23 @@ class BudgetCategoryTest < ActiveSupport::TestCase
       name: "Test Food & Groceries #{Time.now.to_f}",
       family: @family,
       color: "#4da568",
-      lucide_icon: "utensils"
+      lucide_icon: "utensils",
+      user: users(:family_admin)
     )
 
     # Create subcategories with unique names
     @subcategory_with_limit = Category.create!(
       name: "Test Restaurants #{Time.now.to_f}",
       parent: @parent_category,
-      family: @family
+      family: @family,
+      user: users(:family_admin)
     )
 
     @subcategory_inheriting = Category.create!(
       name: "Test Groceries #{Time.now.to_f}",
       parent: @parent_category,
-      family: @family
+      family: @family,
+      user: users(:family_admin)
     )
 
     # Create budget categories
@@ -101,7 +104,8 @@ class BudgetCategoryTest < ActiveSupport::TestCase
       name: "Test Entertainment #{Time.now.to_f}",
       family: @family,
       color: "#a855f7",
-      lucide_icon: "drama"
+      lucide_icon: "drama",
+      user: users(:family_admin)
     )
 
     standalone_bc = BudgetCategory.create!(

@@ -115,7 +115,8 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
   test "spending patterns returns data when expense transactions exist" do
     # Create expense category
     expense_category = @family.categories.create!(
-      name: "Test Groceries"
+      name: "Test Groceries",
+      user: @user
     )
 
     # Create account
@@ -224,9 +225,9 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
 
   test "index groups transactions by parent and subcategories" do
     # Create parent category with subcategories
-    parent_category = @family.categories.create!(name: "Entertainment", color: "#FF5733")
-    subcategory_movies = @family.categories.create!(name: "Movies", parent: parent_category, color: "#33FF57")
-    subcategory_games = @family.categories.create!(name: "Games", parent: parent_category, color: "#5733FF")
+    parent_category = @family.categories.create!(name: "Entertainment", color: "#FF5733", user: @user)
+    subcategory_movies = @family.categories.create!(name: "Movies", parent: parent_category, color: "#33FF57", user: @user)
+    subcategory_games = @family.categories.create!(name: "Games", parent: parent_category, color: "#5733FF", user: @user)
 
     # Create transactions using helper
     create_transaction(account: @family.accounts.first, name: "Cinema ticket", amount: 15, category: subcategory_movies)

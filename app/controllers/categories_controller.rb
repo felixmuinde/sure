@@ -4,18 +4,18 @@ class CategoriesController < ApplicationController
   before_action :set_transaction, only: :create
 
   def index
-    @categories = Current.family.categories.alphabetically
+    @categories = Current.family.categories.where(user: Current.user).alphabetically
 
     render layout: "settings"
   end
 
   def new
-    @category = Current.family.categories.new color: Category::COLORS.sample
+    @category = Current.family.categories.where(user: Current.user).new color: Category::COLORS.sample
     set_categories
   end
 
   def create
-    @category = Current.family.categories.new(category_params)
+    @category = Current.family.categories.where(user: Current.user).new(category_params)
 
     if @category.save
       @transaction.update(category_id: @category.id) if @transaction
@@ -57,24 +57,24 @@ class CategoriesController < ApplicationController
   end
 
   def destroy_all
-    Current.family.categories.destroy_all
+    Current.family.categories.where(user: Current.user).destroy_all
     redirect_back_or_to categories_path, notice: "All categories deleted"
   end
 
   def bootstrap
-    Current.family.categories.bootstrap!
+    Current.family.categories.where(user: Current.user).bootstrap!
 
     redirect_back_or_to categories_path, notice: t(".success")
   end
 
   private
     def set_category
-      @category = Current.family.categories.find(params[:id])
+      @category = Current.family.categories.where(user: Current.user).find(params[:id])
     end
 
     def set_categories
       @categories = unless @category.parent?
-        Current.family.categories.alphabetically.roots.where.not(id: @category.id)
+        Current.family.categories.where(user: Current.user).alphabetically.roots.where.not(id: @category.id)
       else
         []
       end

@@ -1,17 +1,28 @@
 one:
   name: Test
+  color: "#e99537"
+  lucide_icon: shapes
   family: dylan_family
+  user: family_admin
 
 income:
   name: Income
   color: "#fd7f6f"
+  lucide_icon: circle-dollar-sign
   family: dylan_family
+  user: family_admin
 
 food_and_drink:
   name: Food & Drink
+  color: "#f97316"
+  lucide_icon: utensils
   family: dylan_family
+  user: family_admin
 
 subcategory:
   name: Restaurants
+  color: "#f97316"
+  lucide_icon: utensils
   parent: food_and_drink
   family: dylan_family
+  user: family_admin

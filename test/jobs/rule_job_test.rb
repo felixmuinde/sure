@@ -6,8 +6,8 @@ class RuleJobTest < ActiveJob::TestCase
   setup do
     @family = families(:empty)
     @account = @family.accounts.create!(name: "Rule job test", balance: 1000, currency: "USD", accountable: Depository.new)
-    @food_and_dining = @family.categories.create!(name: "Food & Dining")
-    @groceries = @family.categories.create!(name: "Groceries")
+    @food_and_dining = @family.categories.create!(name: "Food & Dining", user: users(:empty))
+    @groceries = @family.categories.create!(name: "Groceries", user: users(:empty))
   end
 
   test "records manually locked matching transactions as blocked" do

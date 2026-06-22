@@ -5,32 +5,32 @@ class PlaidAccount::Transactions::CategoryMatcherTest < ActiveSupport::TestCase
     @family = families(:empty)
 
     # User income categories
-    @income = @family.categories.create!(name: "Income")
-    @dividend_income = @family.categories.create!(name: "Dividend Income", parent: @income)
-    @interest_income = @family.categories.create!(name: "Interest Income", parent: @income)
+    @income = @family.categories.create!(name: "Income", user: users(:empty))
+    @dividend_income = @family.categories.create!(name: "Dividend Income", parent: @income, user: users(:empty))
+    @interest_income = @family.categories.create!(name: "Interest Income", parent: @income, user: users(:empty))
 
     # User expense categories
-    @loan_payments = @family.categories.create!(name: "Loan Payments")
-    @fees = @family.categories.create!(name: "Fees")
-    @entertainment = @family.categories.create!(name: "Entertainment")
+    @loan_payments = @family.categories.create!(name: "Loan Payments", user: users(:empty))
+    @fees = @family.categories.create!(name: "Fees", user: users(:empty))
+    @entertainment = @family.categories.create!(name: "Entertainment", user: users(:empty))
 
-    @food_and_drink = @family.categories.create!(name: "Food & Drink")
-    @groceries = @family.categories.create!(name: "Groceries", parent: @food_and_drink)
-    @restaurant = @family.categories.create!(name: "Restaurant", parent: @food_and_drink)
+    @food_and_drink = @family.categories.create!(name: "Food & Drink", user: users(:empty))
+    @groceries = @family.categories.create!(name: "Groceries", parent: @food_and_drink, user: users(:empty))
+    @restaurant = @family.categories.create!(name: "Restaurant", parent: @food_and_drink, user: users(:empty))
 
-    @shopping = @family.categories.create!(name: "Shopping")
-    @clothing = @family.categories.create!(name: "Clothing", parent: @shopping)
+    @shopping = @family.categories.create!(name: "Shopping", user: users(:empty))
+    @clothing = @family.categories.create!(name: "Clothing", parent: @shopping, user: users(:empty))
 
-    @home = @family.categories.create!(name: "Home")
-    @medical = @family.categories.create!(name: "Medical")
-    @personal_care = @family.categories.create!(name: "Personal Care")
-    @transportation = @family.categories.create!(name: "Transportation")
-    @trips = @family.categories.create!(name: "Trips")
+    @home = @family.categories.create!(name: "Home", user: users(:empty))
+    @medical = @family.categories.create!(name: "Medical", user: users(:empty))
+    @personal_care = @family.categories.create!(name: "Personal Care", user: users(:empty))
+    @transportation = @family.categories.create!(name: "Transportation", user: users(:empty))
+    @trips = @family.categories.create!(name: "Trips", user: users(:empty))
 
-    @services = @family.categories.create!(name: "Services")
-    @car = @family.categories.create!(name: "Car", parent: @services)
+    @services = @family.categories.create!(name: "Services", user: users(:empty))
+    @car = @family.categories.create!(name: "Car", parent: @services, user: users(:empty))
 
-    @giving = @family.categories.create!(name: "Giving")
+    @giving = @family.categories.create!(name: "Giving", user: users(:empty))
 
     @matcher = PlaidAccount::Transactions::CategoryMatcher.new(@family.categories)
   end

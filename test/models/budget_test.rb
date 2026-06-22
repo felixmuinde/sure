@@ -157,7 +157,8 @@ class BudgetTest < ActiveSupport::TestCase
     healthcare = Category.create!(
       name: "Healthcare #{Time.now.to_f}",
       family: family,
-      color: "#e74c3c"
+      color: "#e74c3c",
+      user: users(:family_admin)
     )
 
     budget.sync_budget_categories
@@ -203,7 +204,8 @@ class BudgetTest < ActiveSupport::TestCase
     category = Category.create!(
       name: "Returns Only #{Time.now.to_f}",
       family: family,
-      color: "#3498db"
+      color: "#3498db",
+      user: users(:family_admin)
     )
 
     budget.sync_budget_categories
@@ -238,20 +240,23 @@ class BudgetTest < ActiveSupport::TestCase
     parent_category = Category.create!(
       name: "Transport #{Time.now.to_f}",
       family: family,
-      color: "#6471eb"
+      color: "#6471eb",
+      user: @user
     )
 
     child_category = Category.create!(
       name: "Petrol #{Time.now.to_f}",
       family: family,
       parent: parent_category,
-      color: "#61c9ea"
+      color: "#61c9ea",
+      user: @user
     )
 
     standalone_category = Category.create!(
       name: "Shopping #{Time.now.to_f}",
       family: family,
-      color: "#df4e92"
+      color: "#df4e92",
+      user: @user
     )
 
     budget.sync_budget_categories
@@ -400,7 +405,7 @@ class BudgetTest < ActiveSupport::TestCase
     source_budget.update!(budgeted_spending: 4000, expected_income: 6000)
 
     # Create a category only in the source budget
-    temp_category = Category.create!(name: "Temp #{Time.now.to_f}", family: family, color: "#aaaaaa")
+    temp_category = Category.create!(name: "Temp #{Time.now.to_f}", family: family, color: "#aaaaaa", user: user)
     source_budget.budget_categories.create!(category: temp_category, budgeted_spending: 100, currency: "USD")
 
     target_budget = Budget.find_or_bootstrap(family, start_date: 1.month.ago, user: user)
@@ -420,7 +425,7 @@ class BudgetTest < ActiveSupport::TestCase
     target_budget = Budget.find_or_bootstrap(family, start_date: 1.month.ago, user: user)
 
     # Add a new category only to the target
-    new_category = Category.create!(name: "New #{Time.now.to_f}", family: family, color: "#bbbbbb")
+    new_category = Category.create!(name: "New #{Time.now.to_f}", family: family, color: "#bbbbbb", user: user)
     target_budget.budget_categories.create!(category: new_category, budgeted_spending: 0, currency: "USD")
 
     target_budget.copy_from!(source_budget)

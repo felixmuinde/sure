@@ -37,7 +37,8 @@ RSpec.describe 'API V1 Categories', type: :request do
     family.categories.create!(
       name: 'Food & Drink',
       color: '#f97316',
-      lucide_icon: 'utensils'
+      lucide_icon: 'utensils',
+      user: user
     )
   end
 
@@ -46,7 +47,8 @@ RSpec.describe 'API V1 Categories', type: :request do
       name: 'Restaurants',
       color: '#f97316',
       lucide_icon: 'utensils',
-      parent: parent_category
+      parent: parent_category,
+      user: user
     )
   end
 
@@ -54,7 +56,8 @@ RSpec.describe 'API V1 Categories', type: :request do
     family.categories.create!(
       name: 'Salary',
       color: '#22c55e',
-      lucide_icon: 'circle-dollar-sign'
+      lucide_icon: 'circle-dollar-sign',
+      user: user
     )
   end
 

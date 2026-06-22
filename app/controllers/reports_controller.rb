@@ -623,7 +623,7 @@ class ReportsController < ApplicationController
       if params[:filter_category_id].present?
         category_id = params[:filter_category_id]
         # Scope to family's categories to prevent cross-family data access
-        subcategory_ids = Current.family.categories.where(parent_id: category_id).pluck(:id)
+        subcategory_ids = Current.family.categories.where(user: Current.user, parent_id: category_id).pluck(:id)
         all_category_ids = [ category_id ] + subcategory_ids
         scope = scope.where(category_id: all_category_ids)
       end

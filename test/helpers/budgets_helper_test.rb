@@ -9,13 +9,15 @@ class BudgetsHelperTest < ActionView::TestCase
       name: "Helper Parent #{SecureRandom.hex(4)}",
       family: @family,
       color: "#4da568",
-      lucide_icon: "utensils"
+      lucide_icon: "utensils",
+      user: users(:family_admin)
     )
 
     @child_category = Category.create!(
       name: "Helper Child #{SecureRandom.hex(4)}",
       parent: @parent_category,
-      family: @family
+      family: @family,
+      user: users(:family_admin)
     )
 
     @parent_budget_category = BudgetCategory.create!(
@@ -64,13 +66,15 @@ class BudgetsHelperTest < ActionView::TestCase
       name: "Helper Group Parent #{SecureRandom.hex(4)}",
       family: @family,
       color: "#22c55e",
-      lucide_icon: "utensils"
+      lucide_icon: "utensils",
+      user: users(:family_admin)
     )
 
     child = Category.create!(
       name: "Helper Group Child #{SecureRandom.hex(4)}",
       parent: parent,
-      family: @family
+      family: @family,
+      user: users(:family_admin)
     )
 
     BudgetCategory.create!(

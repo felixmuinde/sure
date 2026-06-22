@@ -87,7 +87,8 @@ class FamilyTest < ActiveSupport::TestCase
     legacy_category = family.categories.create!(
       name: "Investment Contributions",
       color: "#0d9488",
-      lucide_icon: "trending-up"
+      lucide_icon: "trending-up",
+      user: users(:family_admin)
     )
 
     # Should find and reuse the legacy category, updating its name to French
@@ -107,13 +108,15 @@ class FamilyTest < ActiveSupport::TestCase
     english_category = family.categories.create!(
       name: "Investment Contributions",
       color: "#0d9488",
-      lucide_icon: "trending-up"
+      lucide_icon: "trending-up",
+      user: users(:family_admin)
     )
 
     french_category = family.categories.create!(
       name: "Contributions aux investissements",
       color: "#0d9488",
-      lucide_icon: "trending-up"
+      lucide_icon: "trending-up",
+      user: users(:family_admin)
     )
 
     # Create transactions pointing to both categories
