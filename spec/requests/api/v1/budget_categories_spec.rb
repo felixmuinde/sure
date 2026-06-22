@@ -48,6 +48,7 @@ RSpec.describe 'API V1 Budget Categories', type: :request do
   let!(:category) { family.categories.create!(name: 'Groceries', color: '#22c55e') }
   let!(:budget) do
     family.budgets.create!(
+      user: user,
       start_date: Date.current.beginning_of_month,
       end_date: Date.current.end_of_month,
       budgeted_spending: 3000,

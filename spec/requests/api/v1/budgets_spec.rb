@@ -47,6 +47,7 @@ RSpec.describe 'API V1 Budgets', type: :request do
   let(:'X-Api-Key') { api_key.plain_key }
   let!(:budget) do
     family.budgets.create!(
+      user: user,
       start_date: Date.current.beginning_of_month,
       end_date: Date.current.end_of_month,
       budgeted_spending: 3000,

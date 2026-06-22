@@ -17,6 +17,7 @@ class Api::V1::BudgetCategoriesControllerTest < ActionDispatch::IntegrationTest
     )
 
     @budget = @family.budgets.create!(
+      user: @user,
       start_date: 5.months.ago.beginning_of_month.to_date,
       end_date: 5.months.ago.end_of_month.to_date,
       budgeted_spending: 3000,
@@ -33,6 +34,7 @@ class Api::V1::BudgetCategoriesControllerTest < ActionDispatch::IntegrationTest
     other_family = families(:empty)
     other_category = other_family.categories.create!(name: "Other Food", color: "#123456")
     other_budget = other_family.budgets.create!(
+      user: users(:empty),
       start_date: 6.months.ago.beginning_of_month.to_date,
       end_date: 6.months.ago.end_of_month.to_date,
       budgeted_spending: 1000,

@@ -3,14 +3,13 @@ class Budget < ApplicationRecord
 
   PARAM_DATE_FORMAT = "%b-%Y"
 
-  attr_accessor :current_user
-
   belongs_to :family
+  belongs_to :user
 
   has_many :budget_categories, -> { includes(:category) }, dependent: :destroy
 
   validates :start_date, :end_date, presence: true
-  validates :start_date, :end_date, uniqueness: { scope: :family_id }
+  validates :start_date, :end_date, uniqueness: { scope: %i[family_id user_id] }
 
   monetize :budgeted_spending, :expected_income, :allocated_spending,
            :actual_spending, :available_to_spend, :available_to_allocate,
@@ -41,7 +40,7 @@ class Budget < ApplicationRecord
         budget_start <= latest_valid_budget_start_date(family)
     end
 
-    def find_or_bootstrap(family, start_date:, user: nil)
+    def find_or_bootstrap(family, start_date:, user:)
       return nil unless budget_date_valid?(start_date, family: family)
 
       Budget.transaction do
@@ -55,13 +54,13 @@ class Budget < ApplicationRecord
 
         budget = Budget.find_or_create_by!(
           family: family,
+          user: user,
           start_date: budget_start,
           end_date: budget_end
         ) do |b|
           b.currency = family.currency
         end
 
-        budget.current_user = user
         budget.sync_budget_categories
 
         budget
@@ -119,11 +118,8 @@ class Budget < ApplicationRecord
   end
 
   def transactions
-    scope = family.transactions.visible.in_period(period)
-    if current_user
-      scope = scope.joins(:entry).where(entries: { account_id: family.accounts.accessible_by(current_user).select(:id) })
-    end
-    scope
+    family.transactions.visible.in_period(period)
+      .joins(:entry).where(entries: { account_id: family.accounts.accessible_by(user).select(:id) })
   end
 
   def name
@@ -145,6 +141,7 @@ class Budget < ApplicationRecord
   def most_recent_initialized_budget
     family.budgets
       .includes(:budget_categories)
+      .where(user: user)
       .where("start_date < ?", start_date)
       .where.not(budgeted_spending: nil)
       .order(start_date: :desc)
@@ -312,7 +309,7 @@ class Budget < ApplicationRecord
 
   private
     def income_statement
-      @income_statement ||= family.income_statement(user: current_user)
+      @income_statement ||= family.income_statement(user: user)
     end
 
     def net_totals

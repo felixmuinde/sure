@@ -22,6 +22,7 @@ class User < ApplicationRecord
   belongs_to :family
   belongs_to :last_viewed_chat, class_name: "Chat", optional: true
   belongs_to :default_account, class_name: "Account", optional: true
+  has_many :budgets, dependent: :destroy
   has_many :sessions, dependent: :destroy
   has_many :chats, dependent: :destroy
   has_many :api_keys, dependent: :destroy

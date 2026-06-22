@@ -3,6 +3,7 @@ require "test_helper"
 class BudgetTest < ActiveSupport::TestCase
   setup do
     @family = families(:empty)
+    @user = users(:empty)
   end
 
   test "budget_date_valid? allows going back 2 years even without entries" do
@@ -94,6 +95,7 @@ class BudgetTest < ActiveSupport::TestCase
     two_years_ago = 2.years.ago.beginning_of_month
     budget = Budget.create!(
       family: @family,
+      user: @user,
       start_date: two_years_ago,
       end_date: two_years_ago.end_of_month,
       currency: "USD"
@@ -106,6 +108,7 @@ class BudgetTest < ActiveSupport::TestCase
     travel_to Date.current.beginning_of_month do
       budget = Budget.create!(
         family: @family,
+        user: @user,
         start_date: Date.current.beginning_of_month,
         end_date: Date.current.end_of_month,
         currency: "USD"
@@ -120,6 +123,7 @@ class BudgetTest < ActiveSupport::TestCase
       cap_start = Date.current.beginning_of_month + 2.years
       budget = Budget.create!(
         family: @family,
+        user: @user,
         start_date: cap_start,
         end_date: cap_start.end_of_month,
         currency: "USD"
@@ -136,6 +140,7 @@ class BudgetTest < ActiveSupport::TestCase
       cap_start = @family.current_custom_month_period.start_date + 2.years
       budget = Budget.create!(
         family: @family,
+        user: @user,
         start_date: cap_start,
         end_date: cap_start + 1.month - 1.day,
         currency: "USD"
@@ -147,7 +152,7 @@ class BudgetTest < ActiveSupport::TestCase
 
   test "actual_spending nets refunds against expenses in same category" do
     family = families(:dylan_family)
-    budget = Budget.find_or_bootstrap(family, start_date: Date.current.beginning_of_month)
+    budget = Budget.find_or_bootstrap(family, start_date: Date.current.beginning_of_month, user: users(:family_admin))
 
     healthcare = Category.create!(
       name: "Healthcare #{Time.now.to_f}",
@@ -193,7 +198,7 @@ class BudgetTest < ActiveSupport::TestCase
 
   test "budget_category_actual_spending does not go below zero" do
     family = families(:dylan_family)
-    budget = Budget.find_or_bootstrap(family, start_date: Date.current.beginning_of_month)
+    budget = Budget.find_or_bootstrap(family, start_date: Date.current.beginning_of_month, user: users(:family_admin))
 
     category = Category.create!(
       name: "Returns Only #{Time.now.to_f}",
@@ -227,7 +232,7 @@ class BudgetTest < ActiveSupport::TestCase
 
   test "to_donut_segments_json only includes top-level budget categories" do
     family = @family
-    budget = Budget.find_or_bootstrap(family, start_date: Date.current.beginning_of_month)
+    budget = Budget.find_or_bootstrap(family, start_date: Date.current.beginning_of_month, user: @user)
     budget.update!(budgeted_spending: 500, currency: family.currency)
 
     parent_category = Category.create!(
@@ -282,7 +287,7 @@ class BudgetTest < ActiveSupport::TestCase
 
   test "actual_spending subtracts uncategorized refunds" do
     family = families(:dylan_family)
-    budget = Budget.find_or_bootstrap(family, start_date: Date.current.beginning_of_month)
+    budget = Budget.find_or_bootstrap(family, start_date: Date.current.beginning_of_month, user: users(:family_admin))
     account = accounts(:depository)
 
     # Create an uncategorized expense
@@ -324,10 +329,12 @@ class BudgetTest < ActiveSupport::TestCase
 
   test "most_recent_initialized_budget returns latest initialized budget before this one" do
     family = families(:dylan_family)
+    user = users(:family_admin)
 
     # Create an older initialized budget (2 months ago)
     older_budget = Budget.create!(
       family: family,
+      user: user,
       start_date: 2.months.ago.beginning_of_month,
       end_date: 2.months.ago.end_of_month,
       budgeted_spending: 3000,
@@ -338,12 +345,13 @@ class BudgetTest < ActiveSupport::TestCase
     # Create a middle uninitialized budget (1 month ago)
     Budget.create!(
       family: family,
+      user: user,
       start_date: 1.month.ago.beginning_of_month,
       end_date: 1.month.ago.end_of_month,
       currency: "USD"
     )
 
-    current_budget = Budget.find_or_bootstrap(family, start_date: Date.current)
+    current_budget = Budget.find_or_bootstrap(family, start_date: Date.current, user: user)
 
     assert_equal older_budget, current_budget.most_recent_initialized_budget
   end
@@ -352,6 +360,7 @@ class BudgetTest < ActiveSupport::TestCase
     family = families(:empty)
     budget = Budget.create!(
       family: family,
+      user: @user,
       start_date: Date.current.beginning_of_month,
       end_date: Date.current.end_of_month,
       currency: "USD"
@@ -362,14 +371,15 @@ class BudgetTest < ActiveSupport::TestCase
 
   test "copy_from copies budgeted_spending expected_income and matching category budgets" do
     family = families(:dylan_family)
+    user = users(:family_admin)
 
     # Use past months to avoid fixture conflict (fixture :one is at Date.current for dylan_family)
-    source_budget = Budget.find_or_bootstrap(family, start_date: 2.months.ago)
+    source_budget = Budget.find_or_bootstrap(family, start_date: 2.months.ago, user: user)
     source_budget.update!(budgeted_spending: 4000, expected_income: 6000)
     source_bc = source_budget.budget_categories.find_by(category: categories(:food_and_drink))
     source_bc.update!(budgeted_spending: 500)
 
-    target_budget = Budget.find_or_bootstrap(family, start_date: 1.month.ago)
+    target_budget = Budget.find_or_bootstrap(family, start_date: 1.month.ago, user: user)
     assert_nil target_budget.budgeted_spending
 
     target_budget.copy_from!(source_budget)
@@ -384,15 +394,16 @@ class BudgetTest < ActiveSupport::TestCase
 
   test "copy_from skips categories that dont exist in target" do
     family = families(:dylan_family)
+    user = users(:family_admin)
 
-    source_budget = Budget.find_or_bootstrap(family, start_date: 2.months.ago)
+    source_budget = Budget.find_or_bootstrap(family, start_date: 2.months.ago, user: user)
     source_budget.update!(budgeted_spending: 4000, expected_income: 6000)
 
     # Create a category only in the source budget
     temp_category = Category.create!(name: "Temp #{Time.now.to_f}", family: family, color: "#aaaaaa")
     source_budget.budget_categories.create!(category: temp_category, budgeted_spending: 100, currency: "USD")
 
-    target_budget = Budget.find_or_bootstrap(family, start_date: 1.month.ago)
+    target_budget = Budget.find_or_bootstrap(family, start_date: 1.month.ago, user: user)
 
     # Should not raise even though target doesn't have the temp category
     assert_nothing_raised { target_budget.copy_from!(source_budget) }
@@ -401,11 +412,12 @@ class BudgetTest < ActiveSupport::TestCase
 
   test "copy_from leaves new categories at zero" do
     family = families(:dylan_family)
+    user = users(:family_admin)
 
-    source_budget = Budget.find_or_bootstrap(family, start_date: 2.months.ago)
+    source_budget = Budget.find_or_bootstrap(family, start_date: 2.months.ago, user: user)
     source_budget.update!(budgeted_spending: 4000, expected_income: 6000)
 
-    target_budget = Budget.find_or_bootstrap(family, start_date: 1.month.ago)
+    target_budget = Budget.find_or_bootstrap(family, start_date: 1.month.ago, user: user)
 
     # Add a new category only to the target
     new_category = Category.create!(name: "New #{Time.now.to_f}", family: family, color: "#bbbbbb")
@@ -420,6 +432,7 @@ class BudgetTest < ActiveSupport::TestCase
   test "previous_budget_param returns param when date is valid" do
     budget = Budget.create!(
       family: @family,
+      user: @user,
       start_date: Date.current.beginning_of_month,
       end_date: Date.current.end_of_month,
       currency: "USD"
@@ -430,7 +443,7 @@ class BudgetTest < ActiveSupport::TestCase
 
   test "uncategorized budget category actual spending reflects uncategorized transactions" do
     family = families(:dylan_family)
-    budget = Budget.find_or_bootstrap(family, start_date: Date.current.beginning_of_month)
+    budget = Budget.find_or_bootstrap(family, start_date: Date.current.beginning_of_month, user: users(:family_admin))
     account = accounts(:depository)
 
     # Create an uncategorized expense

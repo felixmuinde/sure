@@ -17,6 +17,7 @@ class Api::V1::BudgetsControllerTest < ActionDispatch::IntegrationTest
     )
 
     @budget = @family.budgets.create!(
+      user: @user,
       start_date: 3.months.ago.beginning_of_month.to_date,
       end_date: 3.months.ago.end_of_month.to_date,
       budgeted_spending: 3000,
@@ -33,6 +34,7 @@ class Api::V1::BudgetsControllerTest < ActionDispatch::IntegrationTest
 
     other_family = families(:empty)
     @other_budget = other_family.budgets.create!(
+      user: users(:empty),
       start_date: 4.months.ago.beginning_of_month.to_date,
       end_date: 4.months.ago.end_of_month.to_date,
       budgeted_spending: 1000,
