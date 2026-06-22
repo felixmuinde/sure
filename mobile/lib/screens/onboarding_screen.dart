@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_config.dart';
+import '../services/family_service.dart';
 import '../services/preferences_service.dart';
 import 'login_screen.dart';
 import 'web_page_screen.dart';
@@ -77,9 +78,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Future<void> _completeOnboarding() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final token = authProvider.tokens?.accessToken;
+
     final prefs = PreferencesService.instance;
     await prefs.setUserCountry(_selectedCountryName);
+    await prefs.setUserCountryCode(_selectedCountryCode);
     await prefs.setConsent(version: _consentVersion);
+    if (token != null) {
+      await FamilyService().assignFamily(
+        accessToken: token,
+        countryCode: _selectedCountryCode,
+      );
+    }
+
     await prefs.setOnboardingComplete(true);
     widget.onComplete();
   }
