@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
 import 'chat_list_screen.dart';
-import 'intro_screen_stub.dart';
+import 'insights_screen.dart';
 import 'settings_screen.dart';
 
 /// Pairs a visible tab screen with its bottom-nav destination.

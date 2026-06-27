@@ -477,6 +477,7 @@ Rails.application.routes.draw do
       end
       resource :usage, only: [ :show ], controller: :usage
       resource :balance_sheet, only: [ :show ], controller: :balance_sheet
+      resource :insights, only: [ :show ], controller: :insights
       resource :family_settings, only: [ :show ], controller: :family_settings
       post :sync, to: "sync#create", as: :sync_job
       resources :syncs, only: [ :index, :show ] do

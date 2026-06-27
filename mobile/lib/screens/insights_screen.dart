@@ -1,12 +1,14 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/insights_data.dart';
 import '../providers/auth_provider.dart';
+import '../providers/insights_provider.dart';
 import 'chat_conversation_screen.dart';
 
-const Color _kGreen  = Color(0xFF84BD00);
-const Color _kDarkGreen = Color(0xFF1F4834);
-const Color _kPurple = Color(0xFF986EF9);
+const Color _kGreen      = Color(0xFF84BD00);
+const Color _kDarkGreen  = Color(0xFF1F4834);
+const Color _kPurple     = Color(0xFF986EF9);
 
 class InsightsPreviewScreen extends StatefulWidget {
   const InsightsPreviewScreen({super.key});
@@ -21,6 +23,18 @@ class _InsightsPreviewScreenState extends State<InsightsPreviewScreen>
   bool get wantKeepAlive => true;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final auth     = context.read<AuthProvider>();
+      final insights = context.read<InsightsProvider>();
+      auth.getValidAccessToken().then((token) {
+        if (token != null) insights.fetchInsights(accessToken: token);
+      });
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     super.build(context);
     return const _AccountSummaryView();
@@ -32,28 +46,86 @@ class _AccountSummaryView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme     = Theme.of(context);
     final firstName = context.watch<AuthProvider>().user?.firstName ?? 'there';
-    final bg = theme.brightness == Brightness.light ? Colors.white : Colors.black;
+    final bg        = theme.brightness == Brightness.light ? Colors.white : Colors.black;
+
     return ColoredBox(
       color: bg,
       child: SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _GreetingCard(firstName: firstName, theme: theme),
-          const SizedBox(height: 8),
-          _AskAnythingTile(theme: theme),
-          const SizedBox(height: 20),
-          _SectionHeaderTile(theme: theme),
-          const SizedBox(height: 16),
-          _IsaFinancingCard(theme: theme),
-          const SizedBox(height: 12),
-          _IsaInstalmentsCard(theme: theme),
-        ],
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _GreetingCard(firstName: firstName, theme: theme),
+            const SizedBox(height: 8),
+            _AskAnythingTile(theme: theme),
+            const SizedBox(height: 20),
+            _SectionHeaderTile(theme: theme),
+            const SizedBox(height: 16),
+            Consumer<InsightsProvider>(
+              builder: (context, insights, _) {
+                switch (insights.state) {
+                  case InsightsLoadState.initial:
+                  case InsightsLoadState.loading:
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 40),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+
+                  case InsightsLoadState.notFound:
+                    return Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(
+                        insights.errorMessage ?? 'No ISA data found for your account.',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    );
+
+                  case InsightsLoadState.error:
+                    return Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(
+                            insights.errorMessage ?? 'Unable to load ISA data.',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            final auth             = context.read<AuthProvider>();
+                            final insightsProvider = context.read<InsightsProvider>();
+                            auth.getValidAccessToken().then((token) {
+                              if (token != null) insightsProvider.fetchInsights(accessToken: token);
+                            });
+                          },
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    );
+
+                  case InsightsLoadState.loaded:
+                    final data = insights.data!;
+                    return Column(
+                      children: [
+                        _IsaFinancingCard(theme: theme, data: data),
+                        const SizedBox(height: 12),
+                        _IsaInstalmentsCard(theme: theme, data: data),
+                      ],
+                    );
+                }
+              },
+            ),
+          ],
+        ),
       ),
-    ),
     );
   }
 }
@@ -117,64 +189,64 @@ class _AskAnythingTile extends StatelessWidget {
         ],
       ),
       child: Card(
-      margin: EdgeInsets.zero,
-      color: theme.brightness == Brightness.light ? Colors.white : Colors.black,
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => const ChatConversationScreen(chatId: null),
+        margin: EdgeInsets.zero,
+        color: theme.brightness == Brightness.light ? Colors.white : Colors.black,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const ChatConversationScreen(chatId: null),
+            ),
           ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: _kPurple.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: _kPurple.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.chat_bubble_outline_rounded,
+                    color: _kPurple,
+                    size: 20,
+                  ),
                 ),
-                child: const Icon(
-                  Icons.chat_bubble_outline_rounded,
-                  color: _kPurple,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Ask me anything',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: _kPurple,
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Ask me anything',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: _kPurple,
+                        ),
                       ),
-                    ),
-                    Text(
-                      'Get instant answers about your ISA',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+                      Text(
+                        'Get instant answers about your ISA',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ],
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    ),
     );
   }
 }
@@ -192,23 +264,11 @@ class _SectionHeaderTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'My Account',
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Live data - Coming soon',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
+      child: Text(
+        'My Chancen Account',
+        style: theme.textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
@@ -258,20 +318,35 @@ extension IsaStatusDisplay on IsaStatus {
   }
 }
 
+extension IsaStatusParsing on IsaStatus {
+  static IsaStatus fromString(String? raw) {
+    switch (raw?.toLowerCase().trim()) {
+      case 'repaying':            return IsaStatus.repaying;
+      case 'paused':              return IsaStatus.paused;
+      case 'service fee mode':    return IsaStatus.serviceFeeMode;
+      case 'completed':           return IsaStatus.completed;
+      case 'defaulted':           return IsaStatus.defaulted;
+      case 'isa contract signed': return IsaStatus.contractSigned;
+      default:                    return IsaStatus.contractSigned;
+    }
+  }
+}
+
 class _IsaFinancingCard extends StatelessWidget {
-  const _IsaFinancingCard({required this.theme});
+  const _IsaFinancingCard({required this.theme, required this.data});
 
   final ThemeData theme;
-
-  static const _amountPaid    = 'KSh 45,000';
-  static const _totalFinanced = 'KSh 268,240';
-  static const _status        = IsaStatus.contractSigned;
+  final InsightsData data;
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = (_status == IsaStatus.contractSigned && theme.brightness == Brightness.dark)
+    final status      = IsaStatusParsing.fromString(data.isaStatus);
+    final statusColor = (status == IsaStatus.contractSigned && theme.brightness == Brightness.dark)
         ? _kGreen
-        : _status.color;
+        : status.color;
+    final currency = data.currency ?? '';
+    final repaid   = data.totalRepaidSoFar != null ? '$currency ${data.totalRepaidSoFar}'.trim() : '—';
+    final financed = data.totalFinanced != null ? '$currency ${data.totalFinanced}'.trim() : '—';
 
     return Container(
       decoration: BoxDecoration(
@@ -317,10 +392,10 @@ class _IsaFinancingCard extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(_status.icon, size: 13, color: statusColor),
+                      Icon(status.icon, size: 13, color: statusColor),
                       const SizedBox(width: 4),
                       Text(
-                        _status.label,
+                        status.label,
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: statusColor,
                           fontWeight: FontWeight.w600,
@@ -340,10 +415,9 @@ class _IsaFinancingCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Coming Soon',
+              repaid,
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w800,
-                fontStyle: FontStyle.italic,
               ),
             ),
             const SizedBox(height: 20),
@@ -355,7 +429,7 @@ class _IsaFinancingCard extends StatelessWidget {
                 Expanded(
                   child: _StatItem(
                     label: 'Repayments\nReceived',
-                    value: _amountPaid,
+                    value: repaid,
                     theme: theme,
                     align: CrossAxisAlignment.start,
                   ),
@@ -364,7 +438,7 @@ class _IsaFinancingCard extends StatelessWidget {
                 Expanded(
                   child: _StatItem(
                     label: 'Total\nFinanced',
-                    value: _totalFinanced,
+                    value: financed,
                     theme: theme,
                     align: CrossAxisAlignment.end,
                   ),
@@ -379,15 +453,16 @@ class _IsaFinancingCard extends StatelessWidget {
 }
 
 class _IsaInstalmentsCard extends StatelessWidget {
-  const _IsaInstalmentsCard({required this.theme});
+  const _IsaInstalmentsCard({required this.theme, required this.data});
 
   final ThemeData theme;
+  final InsightsData data;
 
   @override
   Widget build(BuildContext context) {
-    const instalmentsPaid = 9;
-    const maxInstalments = 108;
-    const progress = 9 / 108;
+    final instalmentsPaid = int.tryParse(data.installmentsPaid ?? '') ?? 0;
+    final maxInstalments  = int.tryParse(data.maxInstallments ?? '') ?? 0;
+    final progress        = data.installmentsProgress;
 
     return Container(
       decoration: BoxDecoration(
@@ -405,7 +480,7 @@ class _IsaInstalmentsCard extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Row(
           children: [
-            const _CircularProgress(progress: progress, color: _kGreen),
+            _CircularProgress(progress: progress, color: _kGreen),
             const SizedBox(width: 20),
             Expanded(
               child: Column(
@@ -457,7 +532,7 @@ class _IsaInstalmentsCard extends StatelessWidget {
 }
 
 abstract class _IsaIcons {
-  static const financing = Icons.account_balance_outlined;
+  static const financing   = Icons.account_balance_outlined;
   static const instalments = Icons.calendar_month_outlined;
 }
 
@@ -490,10 +565,9 @@ class _StatItem extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Coming Soon',
+            value,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
-              fontStyle: FontStyle.italic,
             ),
           ),
         ],
@@ -522,10 +596,9 @@ class _CircularProgress extends StatelessWidget {
         ),
         child: Center(
           child: Text(
-            'Soon',
+            '${(progress * 100).toStringAsFixed(0)}%',
             style: theme.textTheme.labelSmall?.copyWith(
               fontWeight: FontWeight.w600,
-              fontStyle: FontStyle.italic,
             ),
           ),
         ),
