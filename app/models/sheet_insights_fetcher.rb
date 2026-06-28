@@ -53,11 +53,20 @@ class SheetInsightsFetcher
 
     def sheets_service
       @sheets_service ||= begin
+        json_data = JSON.parse(ENV["GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON"])
+        # PowerShell (and some other tools) double-escape \n in the private key
+        # when compacting JSON for env vars, producing literal \n instead of newlines.
+        json_data["private_key"] = json_data["private_key"]&.gsub('\n', "\n")
+
         credentials = Google::Auth::ServiceAccountCredentials.make_creds(
-          json_key_io: StringIO.new(ENV["GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON"]),
+          json_key_io: StringIO.new(json_data.to_json),
           scope: Google::Apis::SheetsV4::AUTH_SPREADSHEETS_READONLY
         )
         Google::Apis::SheetsV4::SheetsService.new.tap { |s| s.authorization = credentials }
+      rescue MultiJson::ParseError, JSON::ParserError => e
+        raise ConfigurationError, "GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON is not valid JSON: #{e.message}"
+      rescue OpenSSL::PKey::PKeyError => e
+        raise ConfigurationError, "GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON private_key is invalid: #{e.message}"
       end
     end
 end
