@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_05_12_211200) do
+ActiveRecord::Schema[7.2].define(version: 2026_06_22_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -76,15 +76,15 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_12_211200) do
     t.index ["family_id"], name: "index_account_statements_on_family_id"
     t.index ["suggested_account_id", "review_status"], name: "index_account_statements_on_suggested_account_review"
     t.index ["suggested_account_id"], name: "index_account_statements_on_suggested_account_id"
-    t.check_constraint "byte_size <= 26214400", name: "chk_account_statements_byte_size_max"
-    t.check_constraint "byte_size > 0", name: "chk_account_statements_byte_size_positive"
     t.check_constraint "account_last4_hint IS NULL OR char_length(account_last4_hint::text) <= 4", name: "chk_account_statements_account_last4_hint_length"
     t.check_constraint "account_name_hint IS NULL OR char_length(account_name_hint::text) <= 200", name: "chk_account_statements_account_name_hint_length"
+    t.check_constraint "byte_size <= 26214400", name: "chk_account_statements_byte_size_max"
+    t.check_constraint "byte_size > 0", name: "chk_account_statements_byte_size_positive"
     t.check_constraint "char_length(checksum::text) <= 64", name: "chk_account_statements_checksum_length"
     t.check_constraint "char_length(content_type::text) <= 100", name: "chk_account_statements_content_type_length"
+    t.check_constraint "char_length(filename::text) <= 255", name: "chk_account_statements_filename_length"
     t.check_constraint "content_sha256 IS NULL OR content_sha256::text ~ '^[0-9a-f]{64}$'::text", name: "chk_account_statements_content_sha256"
     t.check_constraint "currency IS NULL OR char_length(currency::text) <= 3", name: "chk_account_statements_currency_length"
-    t.check_constraint "char_length(filename::text) <= 255", name: "chk_account_statements_filename_length"
     t.check_constraint "institution_name_hint IS NULL OR char_length(institution_name_hint::text) <= 200", name: "chk_account_statements_institution_hint_length"
     t.check_constraint "match_confidence IS NULL OR match_confidence >= 0::numeric AND match_confidence <= 1::numeric", name: "chk_account_statements_match_confidence"
     t.check_constraint "parser_confidence IS NULL OR parser_confidence >= 0::numeric AND parser_confidence <= 1::numeric", name: "chk_account_statements_parser_confidence"
@@ -329,8 +329,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_12_211200) do
     t.string "currency", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["family_id", "start_date", "end_date"], name: "index_budgets_on_family_id_and_start_date_and_end_date", unique: true
+    t.uuid "user_id", null: false
+    t.index ["family_id", "user_id", "start_date", "end_date"], name: "idx_on_family_id_user_id_start_date_end_date_bc8c0c2282", unique: true
     t.index ["family_id"], name: "index_budgets_on_family_id"
+    t.index ["user_id"], name: "index_budgets_on_user_id"
   end
 
   create_table "categories", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -342,7 +344,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_12_211200) do
     t.uuid "parent_id"
     t.string "lucide_icon", default: "shapes", null: false
     t.string "classification_unused", default: "expense", null: false
+    t.uuid "user_id", null: false
+    t.index ["family_id", "user_id", "name"], name: "index_categories_on_family_id_and_user_id_and_name", unique: true
     t.index ["family_id"], name: "index_categories_on_family_id"
+    t.index ["user_id"], name: "index_categories_on_user_id"
   end
 
   create_table "chats", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1868,7 +1873,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_12_211200) do
   add_foreign_key "budget_categories", "budgets"
   add_foreign_key "budget_categories", "categories"
   add_foreign_key "budgets", "families"
+  add_foreign_key "budgets", "users"
   add_foreign_key "categories", "families"
+  add_foreign_key "categories", "users"
   add_foreign_key "chats", "users"
   add_foreign_key "coinbase_accounts", "coinbase_items"
   add_foreign_key "coinbase_items", "families"
