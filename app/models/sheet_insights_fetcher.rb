@@ -5,7 +5,6 @@ class SheetInsightsFetcher
   NotFoundError      = Class.new(Error)
   ConfigurationError = Class.new(Error)
 
-  CACHE_KEY    = "sheet_insights_all_rows"
   CACHE_TTL    = 23.hours
   EMAIL_COLUMN = "Email"
 
@@ -23,27 +22,32 @@ class SheetInsightsFetcher
 
   def initialize
     raise ConfigurationError, "GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON not set" unless ENV["GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON"].present?
-    raise ConfigurationError, "GOOGLE_SHEETS_SPREADSHEET_ID not set"       unless ENV["GOOGLE_SHEETS_SPREADSHEET_ID"].present?
+    raise ConfigurationError, "No GOOGLE_SHEETS_SPREADSHEET_ID_* env vars set" if spreadsheet_ids.empty?
   end
 
   def fetch_for_email(email)
-    rows = cached_rows
-    row  = rows.find { |r| r[EMAIL_COLUMN]&.strip&.downcase == email.strip.downcase }
-    raise NotFoundError, "No ISA data found for #{email}" unless row
-
-    FIELDS.each_with_object({}) do |(col, key), result|
-      result[key] = row[col]
+    spreadsheet_ids.each do |country, sheet_id|
+      rows = cached_rows(country, sheet_id)
+      row  = rows.find { |r| r[EMAIL_COLUMN]&.strip&.downcase == email.strip.downcase }
+      next unless row
+      return FIELDS.each_with_object({}) { |(col, key), h| h[key] = row[col] }
     end
+    raise NotFoundError, "No ISA data found for #{email}"
   end
 
   private
 
-    def cached_rows
-      Rails.cache.fetch(CACHE_KEY, expires_in: CACHE_TTL) { fetch_rows }
+    def spreadsheet_ids
+      ENV.select { |k, _| k.start_with?("GOOGLE_SHEETS_SPREADSHEET_ID_") }
+         .transform_keys { |k| k.delete_prefix("GOOGLE_SHEETS_SPREADSHEET_ID_").downcase }
     end
 
-    def fetch_rows
-      range   = sheets_service.get_spreadsheet_values(ENV["GOOGLE_SHEETS_SPREADSHEET_ID"], "A:Z")
+    def cached_rows(country, sheet_id)
+      Rails.cache.fetch("sheet_insights_rows_#{country}", expires_in: CACHE_TTL) { fetch_rows(sheet_id) }
+    end
+
+    def fetch_rows(sheet_id)
+      range   = sheets_service.get_spreadsheet_values(sheet_id, "A:Z")
       values  = range.values || []
       headers = values.first || []
       values[1..].map { |row| headers.zip(row).to_h }

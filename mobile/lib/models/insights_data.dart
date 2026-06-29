@@ -41,4 +41,16 @@ class InsightsData {
     final max  = double.tryParse(maxInstallments ?? '') ?? 0;
     return (max > 0) ? (paid / max).clamp(0.0, 1.0) : 0.0;
   }
+
+  Map<String, dynamic> toJson() => {
+    'isa_status':              isaStatus,
+    'total_financed':          totalFinanced,
+    'repayment_percentage':    repaymentPercentage,
+    'maximum_financed_amount': maximumFinancedAmount,
+    'total_repaid_so_far':     totalRepaidSoFar,
+    'installments_paid':       installmentsPaid,
+    'max_installments':        maxInstallments,
+    'currency':                currency,
+    'institution':             institution,
+  };
 }
