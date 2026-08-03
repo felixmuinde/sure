@@ -13,7 +13,13 @@ class Api::V1::ChatsController < Api::V1::BaseController
 
   def show
     return unless @chat
-    @pagy, @messages = pagy(@chat.messages.ordered, items: 50)
+    @messages = @chat.messages.ordered
+    if params[:since_id].present?
+      pivot = @chat.messages.find(params[:since_id])
+      @messages = @messages.where("created_at > ?", pivot.created_at)
+    else
+      @pagy, @messages = pagy(@messages, items: 50)
+    end
   end
 
   def create

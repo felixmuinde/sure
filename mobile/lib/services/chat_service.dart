@@ -67,10 +67,14 @@ class ChatService {
     required String chatId,
     int page = 1,
     int perPage = 50,
+    String? sinceId,
   }) async {
     try {
+      final query = sinceId != null
+          ? 'since_id=$sinceId'
+          : 'page=$page&per_page=$perPage';
       final url = Uri.parse(
-        '${ApiConfig.baseUrl}/api/v1/chats/$chatId?page=$page&per_page=$perPage',
+        '${ApiConfig.baseUrl}/api/v1/chats/$chatId?$query',
       );
 
       final response = await http.get(

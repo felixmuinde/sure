@@ -21,6 +21,10 @@ class ChatProvider with ChangeNotifier {
 
   static const _pollingTimeout = Duration(seconds: 20);
 
+  /// The ID of the last message seen on the previous poll, used as a cursor
+  /// for incremental fetches so the pagy ceiling never applies during polling.
+  String? _lastSeenMessageId;
+
   /// Content length of the last assistant message from the previous poll.
   /// Used to detect when the LLM has finished writing (no growth between polls).
   int? _lastAssistantContentLength;
@@ -365,6 +369,7 @@ class ChatProvider with ChangeNotifier {
   /// Start polling for new messages (AI responses)
   void _startPolling(String accessToken, String chatId) {
     _pollingTimer?.cancel();
+    _lastSeenMessageId = _currentChat?.messages.lastOrNull?.id;
     _lastAssistantContentLength = null;
     _stablePollingCount = 0;
     _isWaitingForResponse = true;
@@ -389,6 +394,7 @@ class ChatProvider with ChangeNotifier {
     _pollingStartTime = null;
     _isPollingRequestInFlight = false;
     _isWaitingForResponse = false;
+    _lastSeenMessageId = null;
     _lastAssistantContentLength = null;
     _stablePollingCount = 0;
   }
@@ -399,6 +405,7 @@ class ChatProvider with ChangeNotifier {
       final result = await _chatService.getChat(
         accessToken: accessToken,
         chatId: chatId,
+        sinceId: _lastSeenMessageId,
       );
 
       if (result['success'] == true) {
@@ -406,39 +413,37 @@ class ChatProvider with ChangeNotifier {
 
         if (_currentChat == null || _currentChat!.id != chatId) return;
 
-        final oldMessages = _currentChat!.messages;
-        final newMessages = updatedChat.messages;
-        final oldMessageCount = oldMessages.length;
-        final newMessageCount = newMessages.length;
-
-        final oldContentLengthById = <String, int>{};
-        for (final m in oldMessages) {
-          if (m.isAssistant) oldContentLengthById[m.id] = m.content.length;
-        }
-
+        // sinceId fetch returns only new/updated messages — merge them in.
+        // Without sinceId (first poll) the full page is returned; replace as before.
+        final incomingMessages = updatedChat.messages;
         bool shouldUpdate = false;
 
-        // New messages added
-        if (newMessageCount > oldMessageCount) {
+        if (_lastSeenMessageId != null && incomingMessages.isNotEmpty) {
+          // Incremental: append genuinely new messages and update content of the
+          // last known one (it may still be streaming).
+          final existingIds = {for (final m in _currentChat!.messages) m.id};
+          final trulyNew = incomingMessages.where((m) => !existingIds.contains(m.id)).toList();
+          final merged = [
+            ..._currentChat!.messages.map((m) {
+              final updated = incomingMessages.firstWhere(
+                (u) => u.id == m.id,
+                orElse: () => m,
+              );
+              return updated;
+            }),
+            ...trulyNew,
+          ];
+          _currentChat = _currentChat!.copyWith(messages: merged);
           shouldUpdate = true;
-          _lastAssistantContentLength = null;
-        } else if (newMessageCount == oldMessageCount) {
-          // Same count: check if any assistant message has more content
-          for (final m in newMessages) {
-            if (m.isAssistant) {
-              final oldLen = oldContentLengthById[m.id] ?? 0;
-              if (m.content.length > oldLen) {
-                shouldUpdate = true;
-                break;
-              }
-            }
-          }
+        } else if (_lastSeenMessageId == null) {
+          // First poll: full page, replace wholesale and set the cursor.
+          _currentChat = updatedChat;
+          shouldUpdate = true;
         }
 
-        if (shouldUpdate) {
-          _currentChat = updatedChat;
-          notifyListeners();
-        }
+        _lastSeenMessageId = _currentChat!.messages.lastOrNull?.id;
+
+        if (shouldUpdate) notifyListeners();
 
         if (updatedChat.error != null && updatedChat.error!.isNotEmpty) {
           if (!shouldUpdate) {
