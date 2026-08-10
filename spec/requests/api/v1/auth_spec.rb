@@ -367,8 +367,13 @@ RSpec.describe 'API V1 Auth', type: :request do
         run_test!
       end
 
-      response '403', 'insufficient scope' do
-        schema '$ref' => '#/components/schemas/ErrorResponse'
+      response '403', 'ai unavailable or insufficient scope' do
+        schema type: :object,
+               properties: {
+                 error: { type: :string, example: 'ai_unavailable' },
+                 message: { type: :string, example: 'AI is not available for your account' }
+               },
+               required: %w[error]
         run_test!
       end
     end

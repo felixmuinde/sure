@@ -6,6 +6,8 @@ import '../providers/chat_provider.dart';
 import 'chat_conversation_screen.dart';
 import '../l10n/app_localizations.dart';
 
+const Color _kPurple = Color(0xFF986EF9);
+
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
 
@@ -211,6 +213,23 @@ class _ChatListScreenState extends State<ChatListScreen> {
             );
           }
 
+          if (chatProvider.aiConsentRequired || chatProvider.aiUnavailable) {
+            return _AiConsentCard(
+              aiAvailable: chatProvider.aiConsentRequired,
+              isLoading: chatProvider.isLoading,
+              errorMessage: chatProvider.errorMessage,
+              onEnable: () async {
+                final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                final token = await authProvider.getValidAccessToken();
+                if (token == null) {
+                  await authProvider.logout();
+                  return;
+                }
+                await chatProvider.enableAi(accessToken: token);
+              },
+            );
+          }
+
           if (chatProvider.errorMessage != null && chatProvider.chats.isEmpty) {
             return Center(
               child: Padding(
@@ -399,6 +418,96 @@ class _ChatListScreenState extends State<ChatListScreen> {
         onPressed: _openNewChat,
         tooltip: l.chatListNewChat,
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
+
+class _AiConsentCard extends StatelessWidget {
+  const _AiConsentCard({
+    required this.aiAvailable,
+    required this.isLoading,
+    required this.errorMessage,
+    required this.onEnable,
+  });
+
+  final bool aiAvailable;
+  final bool isLoading;
+  final String? errorMessage;
+  final VoidCallback onEnable;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: _kPurple.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.auto_awesome,
+                color: _kPurple,
+                size: 36,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Enable AI Chats',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              aiAvailable
+                  ? 'Ask questions about your finances, get insights, and more. All data sent to our LLM providers is anonymized.'
+                  : 'AI Chats are not configured on this server. Ask your administrator to set up an AI provider.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            if (aiAvailable) ...[
+              const SizedBox(height: 24),
+              if (isLoading)
+                const CircularProgressIndicator(color: _kPurple)
+              else
+                FilledButton(
+                  onPressed: onEnable,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _kPurple,
+                    minimumSize: const Size(double.infinity, 48),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Enable AI Chats'),
+                ),
+              if (errorMessage != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  errorMessage!,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.error,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ],
+          ],
+        ),
       ),
     );
   }

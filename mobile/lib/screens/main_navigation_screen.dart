@@ -49,15 +49,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     AuthProvider authProvider,
     bool introLayout,
   ) async {
-    const chatIndex = 1;
-
-    if (index == chatIndex && !authProvider.aiEnabled) {
-      final enabled = await _showEnableAiPrompt();
-      if (!enabled) {
-        return;
-      }
-    }
-
     if (mounted) {
       setState(() {
         _currentIndex = index;
@@ -174,49 +165,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         ),
       ],
     );
-  }
-
-  Future<bool> _showEnableAiPrompt() async {
-    final l = AppLocalizations.of(context);
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
-    final shouldEnable = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        final dl = AppLocalizations.of(context);
-        return AlertDialog(
-          title: Text(dl.navEnableAiChatTitle),
-          content: Text(dl.navEnableAiChatContent),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text(dl.navEnableAiChatNotNow),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: Text(dl.navEnableAiChatConfirm),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (shouldEnable != true) {
-      return false;
-    }
-
-    final enabled = await authProvider.enableAi();
-
-    if (!enabled && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(authProvider.errorMessage ?? l.navEnableAiChatFailed),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-
-    return enabled;
   }
 
   int _resolveBottomSelectedIndex(List<NavigationDestination> destinations) {

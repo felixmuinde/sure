@@ -41,6 +41,7 @@ class Api::V1::ChatsControllerTest < ActionDispatch::IntegrationTest
 
     response_body = JSON.parse(response.body)
     assert_equal "feature_disabled", response_body["error"]
+    assert_includes [true, false], response_body["ai_available"]
   end
 
   test "should list chats with read scope" do

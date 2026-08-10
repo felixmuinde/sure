@@ -15,6 +15,8 @@ class ChatProvider with ChangeNotifier {
   bool _isSendingMessage = false;
   bool _isWaitingForResponse = false;
   String? _errorMessage;
+  bool _aiConsentRequired = false;
+  bool _aiUnavailable = false;
   Timer? _pollingTimer;
   DateTime? _pollingStartTime;
   bool _isPollingRequestInFlight = false;
@@ -37,6 +39,8 @@ class ChatProvider with ChangeNotifier {
   bool get isWaitingForResponse => _isWaitingForResponse;
   bool get isPolling => _pollingTimer != null;
   String? get errorMessage => _errorMessage;
+  bool get aiConsentRequired => _aiConsentRequired;
+  bool get aiUnavailable => _aiUnavailable;
 
   /// Fetch list of chats
   Future<void> fetchChats({
@@ -46,6 +50,8 @@ class ChatProvider with ChangeNotifier {
   }) async {
     _isLoading = true;
     _errorMessage = null;
+    _aiConsentRequired = false;
+    _aiUnavailable = false;
     notifyListeners();
 
     try {
@@ -58,12 +64,54 @@ class ChatProvider with ChangeNotifier {
       if (result['success'] == true) {
         _chats = result['chats'] as List<Chat>;
         _errorMessage = null;
+      } else if (result['error'] == 'feature_disabled') {
+        final aiAvailable = result['ai_available'] == true;
+        _aiConsentRequired = aiAvailable;
+        _aiUnavailable = !aiAvailable;
       } else {
         _errorMessage = result['error'] ?? 'Failed to fetch chats';
       }
     } catch (e) {
       _log.warning('ChatProvider', 'fetchChats failed: ${e.runtimeType}');
       _errorMessage = 'Something went wrong. Please try again.';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Enable AI for the current user, then reload chats on success
+  Future<bool> enableAi({required String accessToken}) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final result = await _chatService.enableAi(accessToken: accessToken);
+
+      if (result['success'] == true) {
+        _aiConsentRequired = false;
+        _aiUnavailable = false;
+        _isLoading = false;
+        notifyListeners();
+        await fetchChats(accessToken: accessToken);
+        return true;
+      }
+
+      final error = result['error'] as String? ?? '';
+      if (error == 'ai_unavailable') {
+        _aiConsentRequired = false;
+        _aiUnavailable = true;
+      } else if (error == 'unauthorized') {
+        _errorMessage = 'Session expired. Please sign in again.';
+      } else {
+        _errorMessage = 'Could not enable AI. Please try again.';
+      }
+      return false;
+    } catch (e) {
+      _log.warning('ChatProvider', 'enableAi failed: ${e.runtimeType}');
+      _errorMessage = 'Could not enable AI. Please try again.';
+      return false;
     } finally {
       _isLoading = false;
       notifyListeners();
