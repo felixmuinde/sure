@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chancen ISA Companion — Progressive Data Disclosure Blueprint</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green-900: #1B4332;
+      --green-800: #2D6A4F;
+      --green-700: #40916C;
+      --green-600: #52B788;
+      --green-200: #B7E4C7;
+      --green-100: #D8F3DC;
+      --green-50:  #F0FDF4;
+      --blue:      #2563EB;
+      --blue-bg:   #EFF6FF;
+      --orange:    #E36414;
+      --orange-bg: #FFF3EC;
+      --red:       #C1121F;
+      --red-bg:    #FFF0F0;
+      --purple:    #7C3AED;
+      --purple-bg: #F5F3FF;
+      --grey-700:  #495057;
+      --grey-500:  #ADB5BD;
+      --grey-300:  #DEE2E6;
+      --grey-200:  #E9ECEF;
+      --grey-100:  #F8F9FA;
+      --text:      #212529;
+      --text-muted:#6C757D;
+      --white:     #FFFFFF;
+      --radius:    10px;
+      --shadow:    0 2px 8px rgba(0,0,0,.07);
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 14px;
+      color: var(--text);
+      background: var(--grey-100);
+      line-height: 1.6;
+    }
+
+    .page { max-width: 1160px; margin: 0 auto; padding: 32px 24px 80px; }
+
+    /* ── Header ── */
+    .header {
+      background: linear-gradient(135deg, var(--green-900) 0%, var(--green-700) 100%);
+      border-radius: var(--radius);
+      padding: 40px 40px 36px;
+      color: var(--white);
+      margin-bottom: 36px;
+      position: relative;
+      overflow: hidden;
+    }
+    .header::after {
+      content: ''; position: absolute; right: -60px; top: -60px;
+      width: 260px; height: 260px; border-radius: 50%;
+      background: rgba(255,255,255,.05);
+    }
+    .header-eyebrow {
+      font-size: 11px; font-weight: 600; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--green-200); margin-bottom: 8px;
+    }
+    .header h1 { font-size: 26px; font-weight: 700; line-height: 1.25; margin-bottom: 12px; }
+    .header p { color: var(--green-200); max-width: 640px; font-size: 14px; }
+    .header-meta { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+    .header-meta span {
+      font-size: 12px; color: var(--green-200);
+      background: rgba(255,255,255,.1); padding: 4px 10px; border-radius: 20px;
+    }
+
+    /* ── Sections ── */
+    .section { margin-bottom: 44px; }
+    .section-title {
+      font-size: 17px; font-weight: 700; color: var(--green-900);
+      margin-bottom: 4px; display: flex; align-items: center; gap: 10px;
+    }
+    .section-title::before {
+      content: ''; display: inline-block; width: 4px; height: 20px;
+      background: var(--green-600); border-radius: 2px;
+    }
+    .section-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; padding-left: 14px; }
+    .divider { border: none; border-top: 1px solid var(--grey-200); margin: 36px 0; }
+
+    /* ── Cards ── */
+    .card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; }
+
+    /* ── Pipeline ── */
+    .pipeline-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .1em; color: var(--text-muted);
+      margin: 20px 0 10px; padding-left: 2px;
+    }
+    .pipeline { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+    .pipeline-exits { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+
+    .stage-node {
+      background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow);
+      padding: 16px 14px 14px; border-top: 4px solid var(--grey-200); transition: transform .15s;
+    }
+    .stage-node:hover { transform: translateY(-2px); }
+    .stage-node.active-1  { border-top-color: #94A3B8; }
+    .stage-node.active-2  { border-top-color: var(--blue); }
+    .stage-node.active-3  { border-top-color: #10B981; }
+    .stage-node.active-4  { border-top-color: var(--green-600); }
+    .stage-node.active-5  { border-top-color: var(--green-700); }
+    .stage-node.exit-canc { border-top-color: #F59E0B; }
+    .stage-node.exit-rev  { border-top-color: var(--red); }
+    .stage-node.exit-drop { border-top-color: #6B7280; }
+
+    .stage-num { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 4px; }
+    .stage-name { font-size: 13px; font-weight: 700; margin-bottom: 4px; color: var(--text); line-height: 1.3; }
+    .stage-raw {
+      font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: var(--text-muted);
+      background: var(--grey-100); padding: 2px 6px; border-radius: 4px;
+      display: inline-block; margin-bottom: 8px; line-height: 1.4;
+    }
+    .stage-desc { font-size: 11.5px; color: var(--text-muted); line-height: 1.45; }
+    .stage-unlocks { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--grey-200); font-size: 11px; color: var(--green-800); font-weight: 500; }
+    .stage-unlocks span { display: block; line-height: 1.6; }
+    .gap-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 10px; font-weight: 600; background: var(--orange-bg);
+      color: var(--orange); padding: 2px 7px; border-radius: 20px; margin-top: 4px;
+    }
+
+    /* ── Standardization Table ── */
+    .std-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .std-table th, .std-table td { padding: 10px 13px; border: 1px solid var(--grey-200); vertical-align: middle; }
+    .std-table th { background: var(--green-900); color: var(--white); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+    .std-table tr:nth-child(even) td { background: var(--grey-100); }
+    .std-table tr:hover td { background: var(--green-50); }
+    .raw-val { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+    .code-val { font-family: 'JetBrains Mono', monospace; font-size: 11px; background: var(--green-50); color: var(--green-800); padding: 2px 6px; border-radius: 4px; }
+    .flutter-val { font-family: 'JetBrains Mono', monospace; font-size: 11px; background: var(--blue-bg); color: var(--blue); padding: 2px 6px; border-radius: 4px; }
+    .cat-chip {
+      display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px;
+      text-transform: uppercase; letter-spacing: .04em;
+    }
+    .cat-active  { background: var(--green-100); color: var(--green-800); }
+    .cat-exit    { background: var(--red-bg); color: var(--red); }
+    .cat-new     { background: var(--orange-bg); color: var(--orange); }
+    .cat-unknown { background: var(--grey-200); color: var(--grey-700); }
+
+    /* ── Matrix ── */
+    .matrix-wrap { overflow-x: auto; border-radius: var(--radius); box-shadow: var(--shadow); }
+    .matrix { width: 100%; border-collapse: collapse; background: var(--white); font-size: 12px; }
+    .matrix th, .matrix td { padding: 9px 10px; border: 1px solid var(--grey-200); text-align: center; vertical-align: middle; }
+    .matrix th { font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; background: var(--green-900); color: var(--white); }
+    .matrix th.field-col { text-align: left; background: var(--green-800); min-width: 210px; }
+    .matrix tr:nth-child(even) td { background: var(--grey-100); }
+    .matrix tr:hover td { background: var(--green-50); }
+    .matrix td.field-col { text-align: left; font-weight: 500; }
+    .matrix td.field-col small { display: block; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: var(--text-muted); font-weight: 400; }
+    .matrix th.exit-col { background: #4B0E0E; }
+    .matrix td.exit-bg { background: #FFF8F8 !important; }
+    .matrix tr:hover td.exit-bg { background: #FFEEEE !important; }
+    .cell-v  { font-size: 15px; }
+    .cell-l  { font-size: 14px; color: var(--grey-500); }
+    .cell-p  { font-size: 14px; color: var(--orange); }
+    .cell-g  { font-size: 11px; color: var(--orange); font-weight: 700; }
+    .cell-na { color: var(--grey-400); font-size: 11px; }
+    .matrix-legend { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 12px; font-size: 12px; color: var(--text-muted); }
+    .matrix-legend span { display: flex; align-items: center; gap: 5px; }
+
+    /* ── ISA Type Grid ── */
+    .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 680px) { .type-grid { grid-template-columns: 1fr; } }
+    .type-card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; border-left: 4px solid var(--green-600); }
+    .type-card h4 { font-size: 14px; font-weight: 700; margin-bottom: 10px; color: var(--green-900); }
+    .type-card ul { list-style: none; font-size: 12.5px; color: var(--text-muted); }
+    .type-card ul li { padding: 3px 0 3px 14px; position: relative; }
+    .type-card ul li::before { content: '–'; position: absolute; left: 0; color: var(--green-600); }
+
+    /* ── Country Table ── */
+    .country-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .country-table th, .country-table td { padding: 10px 14px; border: 1px solid var(--grey-200); }
+    .country-table th { background: var(--green-900); color: var(--white); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+    .country-table tr:nth-child(even) td { background: var(--grey-100); }
+    .flag { font-size: 18px; }
+    .currency-chip { font-family: 'JetBrains Mono', monospace; font-size: 11px; background: var(--green-100); color: var(--green-800); padding: 2px 7px; border-radius: 4px; font-weight: 500; }
+    .routing-chip { font-family: 'JetBrains Mono', monospace; font-size: 10px; background: var(--grey-100); color: var(--grey-700); padding: 2px 7px; border-radius: 4px; }
+
+    /* ── Callouts ── */
+    .callout { border-radius: var(--radius); padding: 16px 20px; font-size: 13px; margin-bottom: 16px; }
+    .callout-gap  { background: var(--orange-bg); border-left: 4px solid var(--orange); }
+    .callout-gap strong  { color: var(--orange); }
+    .callout-info { background: var(--green-50); border-left: 4px solid var(--green-600); }
+    .callout-info strong { color: var(--green-800); }
+    .callout-warn { background: var(--red-bg); border-left: 4px solid var(--red); }
+    .callout-warn strong { color: var(--red); }
+    .callout-blue { background: var(--blue-bg); border-left: 4px solid var(--blue); }
+    .callout-blue strong { color: var(--blue); }
+    .callout p + p { margin-top: 6px; }
+    .callout code { font-family: 'JetBrains Mono', monospace; font-size: 11px; background: rgba(0,0,0,.07); padding: 1px 5px; border-radius: 3px; }
+    .callout ul { margin-top: 8px; padding-left: 20px; }
+    .callout ul li { margin-bottom: 3px; }
+
+    /* ── Future Architecture ── */
+    .arch-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    @media (max-width: 680px) { .arch-row { grid-template-columns: 1fr; } }
+    .arch-box { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 20px; }
+    .arch-box h4 { font-size: 13px; font-weight: 700; margin-bottom: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; }
+    .arch-box p, .arch-box li { font-size: 12.5px; color: var(--text); line-height: 1.5; }
+    .arch-box ul { list-style: none; padding: 0; }
+    .arch-box ul li { padding: 3px 0 3px 14px; position: relative; }
+    .arch-box ul li::before { content: '→'; position: absolute; left: 0; color: var(--green-600); font-size: 11px; }
+    .arch-tag { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 2px 7px; border-radius: 20px; margin-bottom: 8px; }
+    .tag-now    { background: var(--green-100); color: var(--green-800); }
+    .tag-future { background: #EDE9FE; color: #5B21B6; }
+    .tag-gap    { background: var(--orange-bg); color: var(--orange); }
+
+    /* ── Phases ── */
+    .phases { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+    .phase-card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; border-top: 4px solid var(--grey-200); }
+    .phase-card.p1 { border-top-color: var(--green-600); }
+    .phase-card.p2 { border-top-color: var(--blue); }
+    .phase-card.p3 { border-top-color: var(--orange); }
+    .phase-card.p4 { border-top-color: var(--purple); }
+    .phase-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); margin-bottom: 4px; }
+    .phase-title { font-size: 14px; font-weight: 700; margin-bottom: 12px; color: var(--text); }
+    .phase-items { list-style: none; font-size: 12.5px; }
+    .phase-items li { padding: 4px 0 4px 16px; position: relative; color: var(--text-muted); border-bottom: 1px solid var(--grey-200); }
+    .phase-items li:last-child { border-bottom: none; }
+    .phase-items li::before { content: ''; position: absolute; left: 0; top: 11px; width: 6px; height: 6px; border-radius: 50%; background: var(--grey-500); }
+    .phase-card.p1 .phase-items li::before { background: var(--green-600); }
+    .phase-card.p2 .phase-items li::before { background: var(--blue); }
+    .phase-card.p3 .phase-items li::before { background: var(--orange); }
+    .phase-card.p4 .phase-items li::before { background: var(--purple); }
+    .phase-items code { font-family: 'JetBrains Mono', monospace; font-size: 10px; background: var(--grey-100); padding: 1px 4px; border-radius: 3px; color: var(--text); }
+
+    /* ── Footer ── */
+    .footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--grey-200); font-size: 12px; color: var(--text-muted); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    .footer a { color: var(--green-700); text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+
+    @media print {
+      body { background: white; }
+      .page { padding: 0; max-width: 100%; }
+      .card, .stage-node, .type-card, .arch-box, .phase-card { box-shadow: none; border: 1px solid #ddd; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ── Header ── -->
+  <div class="header">
+    <div class="header-eyebrow">Chancen ISA Companion · Product Design</div>
+    <h1>Progressive Student Data Disclosure<br>Blueprint</h1>
+    <p>A phased plan for revealing ISA data to students based on their contract stage —
+       designed to grow alongside multi-country expansion and future ISA product types.</p>
+    <div class="header-meta">
+      <span>Last updated: August 2026</span>
+      <span>Based on PRs #27, #30, #43, #44</span>
+      <span>Countries: KE · RW · ZA · GH</span>
+      <span>Kenya statuses confirmed Aug 2026</span>
+    </div>
+  </div>
+
+
+  <!-- ── 1. Kenya ISA Statuses — actual values ── -->
+  <div class="section">
+    <div class="section-title">Kenya ISA Statuses — Confirmed Raw Values</div>
+    <div class="section-sub">
+      These are the actual <code>isa_status</code> values from the Metabase warehouse for Kenya contacts.
+      Other countries likely use different strings — standardization is needed before expansion.
+    </div>
+
+    <div class="pipeline-label">Active journey — normal progression</div>
+    <div class="pipeline">
+
+      <div class="stage-node active-1">
+        <div class="stage-num">Stage 1</div>
+        <div class="stage-name">Application</div>
+        <div class="stage-raw">"Application"</div>
+        <div class="stage-desc">Student has submitted an ISA application. No commitment or contract yet. ISA terms not finalised.</div>
+        <div class="stage-unlocks">
+          <span>✅ Status badge</span>
+          <span>✅ "Under review" copy</span>
+          <span>🔒 All financial data</span>
+        </div>
+      </div>
+
+      <div class="stage-node active-2">
+        <div class="stage-num">Stage 2</div>
+        <div class="stage-name">ISA Contract Signed</div>
+        <div class="stage-raw">"ISA Contract Signed"</div>
+        <div class="stage-desc">Contract terms agreed and signed. Education is starting. Chancen has not yet disbursed funds to institution.</div>
+        <div class="stage-unlocks">
+          <span>✅ Status badge</span>
+          <span>✅ Max approved amount</span>
+          <span>✅ Total instalments</span>
+          <span>⚠ Repayment % (API gap)</span>
+          <span>🔒 Financing progress</span>
+          <span>🔒 All repayment data</span>
+        </div>
+      </div>
+
+      <div class="stage-node active-3">
+        <div class="stage-num">Stage 3</div>
+        <div class="stage-name">Pre-graduation Meeting Attended</div>
+        <div class="stage-raw">"Pre-graduation meeting attended"</div>
+        <div class="stage-desc">Student is near end of studies. Chancen has been paying tuition invoices. Pre-grad milestone reached.</div>
+        <div class="stage-unlocks">
+          <span>✅ All Stage 2 data</span>
+          <span>✅ Amount financed to date</span>
+          <span>✅ Financing progress bar</span>
+          <span>🔒 Repayment data (not yet)</span>
+        </div>
+      </div>
+
+      <div class="stage-node active-4">
+        <div class="stage-num">Stage 4</div>
+        <div class="stage-name">Graduated</div>
+        <div class="stage-raw">"Graduated"</div>
+        <div class="stage-desc">Student has completed their education. Repayments begin once income exceeds the threshold.</div>
+        <div class="stage-unlocks">
+          <span>✅ All Stage 3 data</span>
+          <span>✅ Repayment countdown (if started)</span>
+          <span>⚠ Next payment due (API gap)</span>
+        </div>
+        <div class="gap-badge">⚠ Confirm repayment trigger</div>
+      </div>
+
+      <div class="stage-node active-5">
+        <div class="stage-num">Stage 5</div>
+        <div class="stage-name">Repaying</div>
+        <div class="stage-raw">"repaying" <em>(Flutter enum)</em></div>
+        <div class="stage-desc">Income above threshold — student is making monthly ISA repayments. May not be a separate Metabase status; confirm with data team.</div>
+        <div class="stage-unlocks">
+          <span>✅ All Stage 4 data</span>
+          <span>✅ Total repaid</span>
+          <span>✅ Instalments paid / outstanding</span>
+          <span>✅ Repayment progress ring</span>
+        </div>
+        <div class="gap-badge">⚠ Warehouse status TBC</div>
+      </div>
+
+    </div>
+
+    <div class="pipeline-label" style="margin-top:24px">Exit states — off the main path</div>
+    <div class="pipeline-exits">
+
+      <div class="stage-node exit-canc">
+        <div class="stage-num">Exit A</div>
+        <div class="stage-name">Application Cancelled</div>
+        <div class="stage-raw">"Application Cancelled"</div>
+        <div class="stage-desc">Student cancelled their own application before signing. No financial commitment made.</div>
+        <div class="stage-unlocks">
+          <span>✅ "Cancelled" status badge</span>
+          <span>✅ Re-apply CTA (future)</span>
+          <span>🔒 All financial data</span>
+        </div>
+      </div>
+
+      <div class="stage-node exit-rev">
+        <div class="stage-num">Exit B</div>
+        <div class="stage-name">Contract Revoked</div>
+        <div class="stage-raw">"Contract revoked"</div>
+        <div class="stage-desc">Chancen terminated the ISA contract, typically due to eligibility or compliance reasons. Student may have obligations outstanding.</div>
+        <div class="stage-unlocks">
+          <span>✅ Warning status badge</span>
+          <span>✅ Amount financed (if any)</span>
+          <span>✅ Contact support CTA</span>
+        </div>
+      </div>
+
+      <div class="stage-node exit-drop">
+        <div class="stage-num">Exit C</div>
+        <div class="stage-name">Drop Out</div>
+        <div class="stage-raw">"Drop out"</div>
+        <div class="stage-desc">Student left their education programme before completion. ISA obligations may still apply depending on contract terms.</div>
+        <div class="stage-unlocks">
+          <span>✅ Status badge</span>
+          <span>✅ Amount financed to date</span>
+          <span>✅ Contact support CTA</span>
+        </div>
+      </div>
+
+      <div class="stage-node exit-drop">
+        <div class="stage-num">Exit D</div>
+        <div class="stage-name">Drop Off</div>
+        <div class="stage-raw">"Drop off"</div>
+        <div class="stage-desc">Student stopped engaging with Chancen during repayment or education. Similar to Drop Out but may indicate lost contact rather than active withdrawal.</div>
+        <div class="stage-unlocks">
+          <span>✅ Status badge</span>
+          <span>✅ Outstanding balance (if any)</span>
+          <span>✅ Contact support CTA</span>
+        </div>
+        <div class="gap-badge">⚠ Confirm vs Drop Out</div>
+      </div>
+
+    </div>
+
+    <div class="callout callout-gap" style="margin-top:20px">
+      <strong>Ambiguity to resolve with the team:</strong>
+      <ul>
+        <li><strong>Drop Out vs Drop Off</strong> — are these truly distinct statuses or legacy naming? Confirm whether both should show the same UI or if one implies ongoing obligations.</li>
+        <li><strong>Graduated vs Repaying</strong> — does "Graduated" automatically transition to repayment, or is there a separate trigger? The Flutter enum has <code>repaying</code> but no matching Kenya raw status — confirm if "Graduated" <em>is</em> the repayment state in the warehouse.</li>
+        <li><strong>Flutter enum extras</strong> — <code>paused</code>, <code>service_fee_mode</code>, <code>completed</code> appear in the Flutter enum but not in the Kenya raw list. Are these used in other countries, or are they planned states?</li>
+      </ul>
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+
+  <!-- ── 2. Status Standardization ── -->
+  <div class="section">
+    <div class="section-title">Status Standardization Map</div>
+    <div class="section-sub">
+      Kenya uses human-readable strings with spaces and mixed case. Other countries will likely use different strings.
+      Before expanding, agree on a canonical code that all countries map to — the app's disclosure logic should work off the canonical code, not raw strings.
+    </div>
+
+    <div class="callout callout-blue" style="margin-bottom:20px">
+      <strong>Proposed approach:</strong> Keep raw strings in the warehouse (each country manages their own). The Rails provider normalizes to a canonical <code>isa_status_code</code> before returning it in the API. The Flutter app uses the code exclusively. Raw strings are only visible in admin/debug views.
+    </div>
+
+    <div style="overflow-x:auto; border-radius:var(--radius); box-shadow:var(--shadow);">
+    <table class="std-table">
+      <thead>
+        <tr>
+          <th>Kenya Raw Status</th>
+          <th>Proposed Canonical Code</th>
+          <th>Category</th>
+          <th>Flutter Enum (current)</th>
+          <th>Flutter Enum Change?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="raw-val">"Application"</td>
+          <td><span class="code-val">application</span></td>
+          <td><span class="cat-chip cat-active">Active</span></td>
+          <td><em class="cell-na">missing</em></td>
+          <td><span class="cat-chip cat-new">Add</span></td>
+        </tr>
+        <tr>
+          <td class="raw-val">"ISA Contract Signed"</td>
+          <td><span class="code-val">contract_signed</span></td>
+          <td><span class="cat-chip cat-active">Active</span></td>
+          <td><span class="flutter-val">contract_signed</span></td>
+          <td>✅ Matches</td>
+        </tr>
+        <tr>
+          <td class="raw-val">"Pre-graduation meeting attended"</td>
+          <td><span class="code-val">pre_graduation</span></td>
+          <td><span class="cat-chip cat-active">Active</span></td>
+          <td><em class="cell-na">missing</em></td>
+          <td><span class="cat-chip cat-new">Add</span></td>
+        </tr>
+        <tr>
+          <td class="raw-val">"Graduated"</td>
+          <td><span class="code-val">graduated</span></td>
+          <td><span class="cat-chip cat-active">Active</span></td>
+          <td><span class="flutter-val">graduated</span></td>
+          <td>✅ Matches</td>
+        </tr>
+        <tr>
+          <td class="raw-val"><em>(repayment — TBC)</em></td>
+          <td><span class="code-val">repaying</span></td>
+          <td><span class="cat-chip cat-active">Active</span></td>
+          <td><span class="flutter-val">repaying</span></td>
+          <td><span class="cat-chip cat-unknown">Confirm</span></td>
+        </tr>
+        <tr>
+          <td class="raw-val"><em>(not in KE — planned?)</em></td>
+          <td><span class="code-val">paused</span></td>
+          <td><span class="cat-chip cat-active">Active</span></td>
+          <td><span class="flutter-val">paused</span></td>
+          <td><span class="cat-chip cat-unknown">Confirm</span></td>
+        </tr>
+        <tr>
+          <td class="raw-val"><em>(not in KE — planned?)</em></td>
+          <td><span class="code-val">service_fee_mode</span></td>
+          <td><span class="cat-chip cat-active">Active</span></td>
+          <td><span class="flutter-val">service_fee_mode</span></td>
+          <td><span class="cat-chip cat-unknown">Confirm</span></td>
+        </tr>
+        <tr>
+          <td class="raw-val"><em>(not in KE — planned?)</em></td>
+          <td><span class="code-val">completed</span></td>
+          <td><span class="cat-chip cat-active">Active</span></td>
+          <td><span class="flutter-val">completed</span></td>
+          <td><span class="cat-chip cat-unknown">Confirm</span></td>
+        </tr>
+        <tr>
+          <td class="raw-val">"Application Cancelled"</td>
+          <td><span class="code-val">application_cancelled</span></td>
+          <td><span class="cat-chip cat-exit">Exit</span></td>
+          <td><em class="cell-na">missing</em></td>
+          <td><span class="cat-chip cat-new">Add</span></td>
+        </tr>
+        <tr>
+          <td class="raw-val">"Contract revoked"</td>
+          <td><span class="code-val">contract_revoked</span></td>
+          <td><span class="cat-chip cat-exit">Exit</span></td>
+          <td><em class="cell-na">missing</em></td>
+          <td><span class="cat-chip cat-new">Add</span></td>
+        </tr>
+        <tr>
+          <td class="raw-val">"Drop out"</td>
+          <td><span class="code-val">drop_out</span></td>
+          <td><span class="cat-chip cat-exit">Exit</span></td>
+          <td><em class="cell-na">missing</em></td>
+          <td><span class="cat-chip cat-new">Add</span></td>
+        </tr>
+        <tr>
+          <td class="raw-val">"Drop off"</td>
+          <td><span class="code-val">drop_off</span></td>
+          <td><span class="cat-chip cat-exit">Exit</span></td>
+          <td><em class="cell-na">missing</em></td>
+          <td><span class="cat-chip cat-new">Add</span> <span class="cat-chip cat-unknown">or merge w/ drop_out</span></td>
+        </tr>
+        <tr>
+          <td class="raw-val"><em>(defaulted — Flutter enum only)</em></td>
+          <td><span class="code-val">defaulted</span></td>
+          <td><span class="cat-chip cat-exit">Exit</span></td>
+          <td><span class="flutter-val">defaulted</span></td>
+          <td><span class="cat-chip cat-unknown">May map to drop_off?</span></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="callout callout-info" style="margin-top:16px">
+      <strong>Where normalization happens:</strong> In <code>app/models/provider/metabase_student_account.rb</code>, the <code>find_by_email</code> method reads <code>row[idx["isa_status"]]</code> as a raw string. Add a private <code>normalize_status(raw)</code> method that maps known raw strings to canonical codes and logs unknown ones. The API returns <code>status_code</code> (canonical) alongside the raw <code>status</code> for debugging.
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+
+  <!-- ── 3. Data Disclosure Matrix ── -->
+  <div class="section">
+    <div class="section-title">Data Disclosure Matrix</div>
+    <div class="section-sub">Which fields appear on the My Account screen at each ISA stage. Uses canonical codes.</div>
+
+    <div class="matrix-wrap">
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th class="field-col">Field</th>
+            <th>Application</th>
+            <th>Contract<br>Signed</th>
+            <th>Pre-grad<br>Mtg</th>
+            <th>Graduated</th>
+            <th>Repaying</th>
+            <th>Paused</th>
+            <th>Completed</th>
+            <th class="exit-col">App<br>Cancelled</th>
+            <th class="exit-col">Contract<br>Revoked</th>
+            <th class="exit-col">Drop<br>Out / Off</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field-col">ISA Status badge<small>status_code</small></td>
+            <td class="cell-v">✅</td><td class="cell-v">✅</td><td class="cell-v">✅</td><td class="cell-v">✅</td>
+            <td class="cell-v">✅</td><td class="cell-v">✅</td><td class="cell-v">✅</td>
+            <td class="cell-v exit-bg">✅</td><td class="cell-v exit-bg">✅</td><td class="cell-v exit-bg">✅</td>
+          </tr>
+          <tr>
+            <td class="field-col">Max approved amount<small>max_amount</small></td>
+            <td class="cell-l">🔒</td><td class="cell-v">✅</td><td class="cell-v">✅</td><td class="cell-v">✅</td>
+            <td class="cell-v">✅</td><td class="cell-v">✅</td><td class="cell-v">✅</td>
+            <td class="cell-na exit-bg">–</td><td class="cell-v exit-bg">✅</td><td class="cell-v exit-bg">✅</td>
+          </tr>
+          <tr>
+            <td class="field-col">Repayment % of income<small>monthly_repayment_percentage_r_1 — <strong style="color:var(--orange)">API GAP</strong></small></td>
+            <td class="cell-l">🔒</td><td class="cell-g">⚠ GAP</td><td class="cell-g">⚠ GAP</td><td class="cell-g">⚠ GAP</td>
+            <td class="cell-g">⚠ GAP</td><td class="cell-g">⚠ GAP</td><td class="cell-g">⚠ GAP</td>
+            <td class="cell-na exit-bg">–</td><td class="cell-na exit-bg">–</td><td class="cell-na exit-bg">–</td>
+          </tr>
+          <tr>
+            <td class="field-col">Total instalments<small>max_installments</small></td>
+            <td class="cell-l">🔒</td><td class="cell-v">✅</td><td class="cell-v">✅</td><td class="cell-v">✅</td>
+            <td class="cell-v">✅</td><td class="cell-v">✅</td><td class="cell-v">✅</td>
+            <td class="cell-na exit-bg">–</td><td class="cell-na exit-bg">–</td><td class="cell-na exit-bg">–</td>
+          </tr>
+          <tr>
+            <td class="field-col">Amount financed to date<small>total_financed</small></td>
+            <td class="cell-l">🔒</td><td class="cell-l">🔒</td><td class="cell-v">✅</td><td class="cell-v">✅</td>
+            <td class="cell-v">✅</td><td class="cell-v">✅</td><td class="cell-v">✅</td>
+            <td class="cell-na exit-bg">–</td><td class="cell-v exit-bg">✅</td><td class="cell-v exit-bg">✅</td>
+          </tr>
+          <tr>
+            <td class="field-col">Financing progress bar<small>total_financed ÷ max_amount</small></td>
+            <td class="cell-l">🔒</td><td class="cell-l">🔒</td><td class="cell-v">✅</td><td class="cell-v">✅</td>
+            <td class="cell-v">✅</td><td class="cell-v">✅</td><td class="cell-v">✅</td>
+            <td class="cell-na exit-bg">–</td><td class="cell-na exit-bg">–</td><td class="cell-na exit-bg">–</td>
+          </tr>
+          <tr>
+            <td class="field-col">Total repaid<small>repayments_received</small></td>
+            <td class="cell-l">🔒</td><td class="cell-l">🔒</td><td class="cell-l">🔒</td><td class="cell-p">⚠</td>
+            <td class="cell-v">✅</td><td class="cell-v">✅</td><td class="cell-v">✅</td>
+            <td class="cell-na exit-bg">–</td><td class="cell-na exit-bg">–</td><td class="cell-v exit-bg">✅</td>
+          </tr>
+          <tr>
+            <td class="field-col">Instalments paid / outstanding<small>installments_paid, max_installments − paid</small></td>
+            <td class="cell-l">🔒</td><td class="cell-l">🔒</td><td class="cell-l">🔒</td><td class="cell-p">⚠</td>
+            <td class="cell-v">✅</td><td class="cell-v">✅</td><td class="cell-v">✅</td>
+            <td class="cell-na exit-bg">–</td><td class="cell-na exit-bg">–</td><td class="cell-v exit-bg">✅</td>
+          </tr>
+          <tr>
+            <td class="field-col">Repayment progress ring<small>computed</small></td>
+            <td class="cell-l">🔒</td><td class="cell-l">🔒</td><td class="cell-l">🔒</td><td class="cell-p">⚠</td>
+            <td class="cell-v">✅</td><td class="cell-p">⚠</td><td class="cell-v">✅</td>
+            <td class="cell-na exit-bg">–</td><td class="cell-na exit-bg">–</td><td class="cell-l exit-bg">🔒</td>
+          </tr>
+          <tr>
+            <td class="field-col">Next payment due date<small>not in API yet — <strong style="color:var(--orange)">GAP</strong></small></td>
+            <td class="cell-na">–</td><td class="cell-na">–</td><td class="cell-na">–</td><td class="cell-g">⚠ GAP</td>
+            <td class="cell-g">⚠ GAP</td><td class="cell-g">⚠ GAP</td><td class="cell-na">–</td>
+            <td class="cell-na exit-bg">–</td><td class="cell-na exit-bg">–</td><td class="cell-na exit-bg">–</td>
+          </tr>
+          <tr>
+            <td class="field-col">Contact support CTA<small>link / button</small></td>
+            <td class="cell-na">–</td><td class="cell-na">–</td><td class="cell-na">–</td><td class="cell-na">–</td>
+            <td class="cell-na">–</td><td class="cell-v">✅</td><td class="cell-na">–</td>
+            <td class="cell-v exit-bg">✅</td><td class="cell-v exit-bg">✅</td><td class="cell-v exit-bg">✅</td>
+          </tr>
+          <tr>
+            <td class="field-col">Completion hero banner<small>ISA fulfilled message</small></td>
+            <td class="cell-na">–</td><td class="cell-na">–</td><td class="cell-na">–</td><td class="cell-na">–</td>
+            <td class="cell-na">–</td><td class="cell-na">–</td><td class="cell-v">✅</td>
+            <td class="cell-na exit-bg">–</td><td class="cell-na exit-bg">–</td><td class="cell-na exit-bg">–</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="matrix-legend">
+      <span>✅ Visible</span>
+      <span>🔒 Hidden (stage gate)</span>
+      <span>⚠ Conditional — confirm repayment trigger with team</span>
+      <span><strong style="color:var(--orange)">⚠ GAP</strong> — In Metabase but not in API response</span>
+      <span>– Not applicable</span>
+      <span style="background:var(--red-bg);padding:2px 8px;border-radius:4px;">Shaded columns = exit states</span>
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+
+  <!-- ── 4. ISA Type Considerations ── -->
+  <div class="section">
+    <div class="section-title">ISA Type Considerations</div>
+    <div class="section-sub">No <code>isa_type</code> field exists today. Different ISA products will need different disclosure rules and UI copy.</div>
+
+    <div class="callout callout-info" style="margin-bottom:20px">
+      <strong>Current state:</strong> A single ISA product is assumed. As Chancen expands products and countries, disclosure rules will need to branch by ISA type. The status pipeline above may also differ per product — for example, a bootcamp ISA may not have a "Pre-graduation meeting attended" stage.
+    </div>
+
+    <div class="type-grid">
+      <div class="type-card">
+        <h4>Standard ISA — Kenya (current baseline)</h4>
+        <ul>
+          <li>Repayment % of net income (e.g. 15%)</li>
+          <li>Fixed instalment count (e.g. 48 months)</li>
+          <li>Max financing cap (e.g. KES 268,240)</li>
+          <li>Income threshold before repayments trigger</li>
+          <li>All current stage pipeline and UI cards apply</li>
+        </ul>
+      </div>
+      <div class="type-card">
+        <h4>Short-Course / Bootcamp ISA (hypothetical)</h4>
+        <ul>
+          <li>Shorter repayment period (e.g. 24 months)</li>
+          <li>No "Pre-graduation meeting" stage</li>
+          <li>Different income threshold</li>
+          <li>Lower max financing amount</li>
+          <li>May replace "Instalments" card with lump-sum view</li>
+        </ul>
+      </div>
+      <div class="type-card">
+        <h4>Partner Org / Employer-Linked ISA (hypothetical)</h4>
+        <ul>
+          <li>Employer-linked — repayments may be payroll deducted</li>
+          <li>Different copy: "Your employer is contributing…"</li>
+          <li>Employer contribution split view</li>
+          <li>Employer contact card may appear</li>
+        </ul>
+      </div>
+      <div class="type-card">
+        <h4>Cross-Border ISA (future)</h4>
+        <ul>
+          <li>Student studied in one country, repaying from another</li>
+          <li>Currency conversion display needed</li>
+          <li>Two Metabase question IDs may be needed</li>
+          <li>Jurisdiction for repayment threshold may differ</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout callout-gap" style="margin-top:20px">
+      <strong>Design decision needed:</strong> Add <code>isa_type</code> to <code>StudentAccountData</code> (Ruby struct), <code>StudentAccount</code> (Flutter model), and the API JSON response. Confirm with the data team whether this column exists in the Metabase warehouse. Once available, the Flutter <code>_visibilityFor()</code> helper receives both <code>status</code> and <code>isaType</code> to drive card visibility.
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+
+  <!-- ── 5. Multi-Country Expansion ── -->
+  <div class="section">
+    <div class="section-title">Multi-Country Expansion</div>
+    <div class="section-sub"><code>POST /api/v1/family_assignment</code> already routes students into country-specific families. Each country will likely have different raw status strings and different ISA terms.</div>
+
+    <table class="country-table card">
+      <thead>
+        <tr>
+          <th>Country</th>
+          <th>Code</th>
+          <th>Currency</th>
+          <th>Family Routing</th>
+          <th>Metabase Question</th>
+          <th>Status Strings</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="flag">🇰🇪</span> Kenya</td>
+          <td><span class="currency-chip">KE</span></td>
+          <td><span class="currency-chip">KES</span></td>
+          <td><span class="routing-chip">family_assignment</span></td>
+          <td>Single global ID today</td>
+          <td><span class="cat-chip cat-active">Confirmed — see Section 1</span></td>
+        </tr>
+        <tr>
+          <td><span class="flag">🇷🇼</span> Rwanda</td>
+          <td><span class="currency-chip">RW</span></td>
+          <td><span class="currency-chip">RWF</span></td>
+          <td><span class="routing-chip">family_assignment</span></td>
+          <td><em>Not configured yet</em></td>
+          <td><span class="cat-chip cat-new">Unknown — confirm</span></td>
+        </tr>
+        <tr>
+          <td><span class="flag">🇿🇦</span> South Africa</td>
+          <td><span class="currency-chip">ZA</span></td>
+          <td><span class="currency-chip">ZAR</span></td>
+          <td><span class="routing-chip">family_assignment</span></td>
+          <td><em>Not configured yet</em></td>
+          <td><span class="cat-chip cat-new">Unknown — confirm</span></td>
+        </tr>
+        <tr>
+          <td><span class="flag">🇬🇭</span> Ghana</td>
+          <td><span class="currency-chip">GH</span></td>
+          <td><span class="currency-chip">GHS</span></td>
+          <td><span class="routing-chip">family_assignment</span></td>
+          <td><em>Not configured yet</em></td>
+          <td><span class="cat-chip cat-new">Unknown — confirm</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-gap" style="margin-top:16px">
+      <strong>Single-point bottleneck:</strong> <code>Setting.metabase_student_question_id</code> is a single global value. When RW/ZA/GH go live, this must become per-country — e.g. a JSONB hash <code>{ "ke": "42", "rw": "57" }</code> or separate fields like <code>metabase_student_question_id_ke</code>. <code>MyAccountController</code> would select by <code>current_resource_owner.family.country</code>.
+    </div>
+    <div class="callout callout-info">
+      <strong>Currency display:</strong> The <code>currency</code> field is already returned by the API (defaults to <code>KES</code>). Flutter should use this field for all monetary formatting — never hardcode <code>KES</code>.
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+
+  <!-- ── 6. Family Creation & Student Categories ── -->
+  <div class="section">
+    <div class="section-title">Family Creation &amp; Student Categories</div>
+    <div class="section-sub">No "student" concept exists in the data model today. Here's what exists and what needs to be designed.</div>
+
+    <div class="arch-row">
+      <div class="arch-box">
+        <div class="arch-tag tag-now">Current State</div>
+        <h4>User → Family (by country)</h4>
+        <ul>
+          <li><code>User.role</code>: guest / member / admin / super_admin — no "student" role</li>
+          <li><code>Family.country</code>: ISO code for routing (KE / RW / ZA / GH)</li>
+          <li><code>Family.moniker</code>: "Family" or "Group" — no ISA concept</li>
+          <li>Students identified purely by email lookup in Metabase</li>
+          <li>No cohort, program, intake year, or institution fields</li>
+        </ul>
+      </div>
+      <div class="arch-box">
+        <div class="arch-tag tag-future">Future Design (propose to team)</div>
+        <h4>Student Profile Layer</h4>
+        <ul>
+          <li><code>Family.family_type</code> enum: <code>personal</code> | <code>student_isa</code> | <code>partner_org</code></li>
+          <li><code>User.student_profile</code> or a <code>StudentProfile</code> join model</li>
+          <li>Student categories: cohort, program, intake year, institution</li>
+          <li>ISA type tag on family or user level → drives disclosure rules</li>
+          <li><code>Account.metadata</code> JSONB (already exists — PR #27) as bridge before formal model</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="arch-row">
+      <div class="arch-box">
+        <div class="arch-tag tag-gap">Gap: Student Categories</div>
+        <h4>What Categories Students Can Belong To</h4>
+        <p style="margin-bottom:8px">None currently exist in code. Likely categories to design:</p>
+        <ul>
+          <li><strong>By program:</strong> Engineering, Business, Health, etc.</li>
+          <li><strong>By institution:</strong> University / bootcamp name</li>
+          <li><strong>By intake:</strong> Jan 2024, Sep 2024, etc.</li>
+          <li><strong>By ISA type:</strong> Standard / Short-course / Employer-linked</li>
+          <li><strong>By country:</strong> Already handled via <code>Family.country</code></li>
+        </ul>
+      </div>
+      <div class="arch-box">
+        <div class="arch-tag tag-future">Where Logic Should Live</div>
+        <h4>Disclosure Rule Architecture</h4>
+        <ul>
+          <li>Flutter: <code>_visibilityFor(IsaStatus, {IsaType?, String? country})</code> → <code>Set&lt;String&gt;</code> of visible section keys</li>
+          <li>Rails: <code>MyAccountController</code> selects Metabase question by <code>family.country</code> + optional <code>isa_type</code></li>
+          <li>Admin: each country × ISA type combo gets its own Metabase question ID in Settings</li>
+          <li><code>status_code</code> drives gating; <code>isa_type</code> drives which cards and copy appear</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout callout-info">
+      <strong>Bridge option (before full student profile model):</strong> Use <code>Account.metadata</code> (PR #27, already merged) to store ISA metadata per account — e.g. <code>{ "isa_type": "standard", "cohort": "jan_2024", "institution": "Strathmore" }</code>. Avoids a new migration; can be promoted to a proper model later. Readable from <code>GET /api/v1/accounts/:id</code>.
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+
+  <!-- ── 7. Implementation Phases ── -->
+  <div class="section">
+    <div class="section-title">Implementation Phases</div>
+    <div class="section-sub">Four phases from "kill Coming Soon" to full multi-country, multi-product disclosure.</div>
+
+    <div class="phases">
+
+      <div class="phase-card p1">
+        <div class="phase-label">Phase 1 · Now</div>
+        <div class="phase-title">Wire Real Data</div>
+        <ul class="phase-items">
+          <li>Merge PR #43 (Metabase provider)</li>
+          <li>Add <code>normalize_status(raw)</code> to map Kenya strings → canonical codes</li>
+          <li>Add <code>application</code> + exit states to Flutter <code>IsaStatus</code> enum</li>
+          <li>Show real status badge from <code>status_code</code></li>
+          <li>Show <code>max_amount</code> + <code>max_installments</code> for <code>contract_signed</code>+</li>
+          <li>Show "Under review" copy for <code>application</code> stage</li>
+          <li>Show support CTA for exit states</li>
+        </ul>
+      </div>
+
+      <div class="phase-card p2">
+        <div class="phase-label">Phase 2 · Next sprint</div>
+        <div class="phase-title">Gate Cards by Stage</div>
+        <ul class="phase-items">
+          <li>Add <code>_visibilityFor(IsaStatus)</code> helper in Flutter</li>
+          <li>Wire <code>total_financed</code> + financing progress bar (Stage 3: <code>pre_graduation</code>+)</li>
+          <li>Wire full repayment section (Stage 5: <code>repaying</code>)</li>
+          <li>Handle exit state UI (contract revoked, drop out/off)</li>
+          <li>Confirm <code>graduated</code> vs <code>repaying</code> trigger with data team</li>
+          <li>Show completion hero for <code>completed</code></li>
+        </ul>
+      </div>
+
+      <div class="phase-card p3">
+        <div class="phase-label">Phase 3 · Later</div>
+        <div class="phase-title">Fill API Gaps</div>
+        <ul class="phase-items">
+          <li>Add <code>monthly_repayment_percentage</code> to API response</li>
+          <li>Add next payment due date to Metabase query + API</li>
+          <li>Add pre-graduation funding status as explicit warehouse stage</li>
+          <li>Per-country Metabase question ID routing in Settings</li>
+          <li>Currency formatting from <code>currency</code> field — remove KES hardcoding</li>
+          <li>Confirm RW/ZA/GH raw status strings; extend normalization map</li>
+        </ul>
+      </div>
+
+      <div class="phase-card p4">
+        <div class="phase-label">Phase 4 · Future</div>
+        <div class="phase-title">ISA Types &amp; Multi-Country</div>
+        <ul class="phase-items">
+          <li>Add <code>isa_type</code> to provider + API + Flutter model</li>
+          <li>Add <code>Family.family_type</code> enum</li>
+          <li>Student category model (cohort, program, institution, intake)</li>
+          <li>Country × ISA type disclosure matrix in Flutter</li>
+          <li>RW / ZA / GH Metabase question IDs in Settings</li>
+          <li>Status normalization maps per country (each country owns its strings)</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+
+  <!-- ── 8. Key Files ── -->
+  <div class="section">
+    <div class="section-title">Key Files</div>
+    <div class="section-sub">Files to touch for each phase. Some are in the <strong>sure</strong> repo (Rails), some in <strong>companion</strong> (Flutter + API).</div>
+
+    <div class="card" style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12.5px">
+        <thead>
+          <tr style="background:var(--green-900);color:white">
+            <th style="padding:10px 14px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em">File</th>
+            <th style="padding:10px 14px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em">Repo</th>
+            <th style="padding:10px 14px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em">Change</th>
+            <th style="padding:10px 14px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em">Phase</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--grey-200)">
+            <td style="padding:9px 14px;font-family:monospace;font-size:11px">app/models/provider/metabase_student_account.rb</td>
+            <td style="padding:9px 14px">sure</td>
+            <td style="padding:9px 14px">Add <code>normalize_status()</code>; add <code>monthly_repayment_percentage</code> to response</td>
+            <td style="padding:9px 14px"><span class="arch-tag tag-now" style="margin:0">Ph 1, 3</span></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--grey-200);background:var(--grey-100)">
+            <td style="padding:9px 14px;font-family:monospace;font-size:11px">app/controllers/api/v1/my_account_controller.rb</td>
+            <td style="padding:9px 14px">sure</td>
+            <td style="padding:9px 14px">Return <code>status_code</code> (canonical) alongside raw <code>status</code>; per-country question routing</td>
+            <td style="padding:9px 14px"><span class="arch-tag tag-now" style="margin:0">Ph 1, 3</span></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--grey-200)">
+            <td style="padding:9px 14px;font-family:monospace;font-size:11px">app/models/setting.rb</td>
+            <td style="padding:9px 14px">sure</td>
+            <td style="padding:9px 14px">Add per-country Metabase question ID fields</td>
+            <td style="padding:9px 14px"><span class="arch-tag tag-gap" style="margin:0">Phase 3</span></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--grey-200);background:var(--grey-100)">
+            <td style="padding:9px 14px;font-family:monospace;font-size:11px">mobile/lib/models/student_account.dart</td>
+            <td style="padding:9px 14px">companion</td>
+            <td style="padding:9px 14px">Add <code>statusCode</code> field; add <code>isaType</code>, <code>monthlyRepaymentPct</code> (Phase 3–4)</td>
+            <td style="padding:9px 14px"><span class="arch-tag tag-now" style="margin:0">Ph 1–4</span></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--grey-200)">
+            <td style="padding:9px 14px;font-family:monospace;font-size:11px">mobile/lib/screens/intro_screen_stub.dart</td>
+            <td style="padding:9px 14px">companion</td>
+            <td style="padding:9px 14px">Add all new statuses to <code>IsaStatus</code> enum; add <code>_visibilityFor()</code>; wire all cards</td>
+            <td style="padding:9px 14px"><span class="arch-tag tag-now" style="margin:0">Ph 1–2</span></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--grey-200);background:var(--grey-100)">
+            <td style="padding:9px 14px;font-family:monospace;font-size:11px">mobile/lib/providers/my_account_provider.dart</td>
+            <td style="padding:9px 14px">companion</td>
+            <td style="padding:9px 14px">Call <code>load()</code> on screen mount; expose error + loading states</td>
+            <td style="padding:9px 14px"><span class="arch-tag tag-now" style="margin:0">Phase 1</span></td>
+          </tr>
+          <tr style="background:var(--grey-100)">
+            <td style="padding:9px 14px;font-family:monospace;font-size:11px">app/models/family.rb</td>
+            <td style="padding:9px 14px">sure</td>
+            <td style="padding:9px 14px">Add <code>family_type</code> enum (personal / student_isa / partner_org)</td>
+            <td style="padding:9px 14px"><span class="arch-tag tag-future" style="margin:0">Phase 4</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+
+  <!-- ── Footer ── -->
+  <div class="footer">
+    <span>Living document — last updated August 2026. Refine with product &amp; data team.</span>
+    <span>
+      PRs:
+      <a href="https://github.com/chancenhq/companion/pull/27">#27</a>,
+      <a href="https://github.com/chancenhq/companion/pull/30">#30</a>,
+      <a href="https://github.com/chancenhq/companion/pull/43">#43</a>,
+      <a href="https://github.com/chancenhq/companion/pull/44">#44</a>
+      · Countries: KE · RW · ZA · GH · Kenya statuses confirmed Aug 2026
+    </span>
+  </div>
+
+</div>
+</body>
+</html>

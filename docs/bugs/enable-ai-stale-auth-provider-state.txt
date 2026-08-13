@@ -1,0 +1,41 @@
+BUG: After enabling AI in-app, new chat screen shows "AI not available"
+=======================================================================
+
+Reported: 2026-08-11
+Branch: feat/companion-ai-consent (companion)
+Reporter: Felix
+
+DESCRIPTION
+-----------
+After tapping "Enable AI" on the chat list screen and seeing it succeed
+(chat list updates, FAB appears), tapping the + new chat button navigates
+to ChatConversationScreen which immediately shows the "AI is not enabled yet"
+disabled state. Sign out and sign back in resolves it.
+
+ROOT CAUSE
+----------
+ChatProvider.enableAi() updates its own aiConsentRequired/aiUnavailable flags
+but never refreshes AuthProvider.user. The conversation screen was checking
+`!authProvider.aiEnabled` which reads the stale locally-cached value (false)
+rather than the server-confirmed post-enable state.
+
+FIX APPLIED
+-----------
+Removed `!authProvider.aiEnabled` from the conversation screen's disabled-state
+guard (chat_conversation_screen.dart:322). The screen now relies solely on
+chatProvider.aiUnavailable, which is correctly set to false after a successful
+enable. ChatProvider is the source of truth for live AI state; AuthProvider
+carries a stale cache that is only refreshed on sign-in.
+
+LONGER-TERM NOTE
+----------------
+A cleaner fix would be for ChatProvider.enableAi() (or ChatService.enableAi())
+to parse the user object from the 200 response and call AuthProvider to refresh
+its cached user, keeping both providers in sync. The old AuthService.enableAi()
+did this — the new ChatService version skips it.
+
+Relevant files:
+- mobile/lib/screens/chat_conversation_screen.dart  (fix applied here)
+- mobile/lib/providers/chat_provider.dart           (enableAi — does not update AuthProvider)
+- mobile/lib/services/chat_service.dart             (enableAi — discards user from 200 response)
+- mobile/lib/providers/auth_provider.dart           (aiEnabled getter reads stale cache)

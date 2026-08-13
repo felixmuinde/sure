@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Companion – Insights Live Data Plan</title>
+  <style>
+    :root {
+      --green: #84BD00;
+      --dark-green: #1F4834;
+      --purple: #986EF9;
+      --bg: #f9fafb;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --text: #111827;
+      --muted: #6b7280;
+      --code-bg: #f3f4f6;
+      --tag-blue: #dbeafe;
+      --tag-blue-text: #1d4ed8;
+      --tag-green: #dcfce7;
+      --tag-green-text: #15803d;
+      --tag-amber: #fef3c7;
+      --tag-amber-text: #92400e;
+      --tag-red: #fee2e2;
+      --tag-red-text: #991b1b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 2rem 1rem;
+    }
+    .container { max-width: 860px; margin: 0 auto; }
+    h1 { font-size: 1.75rem; font-weight: 800; margin-bottom: 0.25rem; }
+    .subtitle { color: var(--muted); margin-bottom: 2rem; font-size: 0.95rem; }
+    h2 {
+      font-size: 1.1rem; font-weight: 700; margin: 2rem 0 0.75rem;
+      padding-bottom: 0.4rem; border-bottom: 2px solid var(--border);
+    }
+    h3 { font-size: 0.95rem; font-weight: 700; margin: 1.25rem 0 0.5rem; color: var(--dark-green); }
+    p { margin-bottom: 0.75rem; color: var(--muted); font-size: 0.9rem; }
+    ul { padding-left: 1.25rem; margin-bottom: 0.75rem; }
+    li { margin-bottom: 0.35rem; font-size: 0.9rem; }
+    code {
+      font-family: 'SF Mono', Menlo, Consolas, monospace;
+      font-size: 0.82rem;
+      background: var(--code-bg);
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+      color: #374151;
+    }
+    pre {
+      background: #1e2433;
+      color: #e2e8f0;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-size: 0.8rem;
+      font-family: 'SF Mono', Menlo, Consolas, monospace;
+      line-height: 1.55;
+      margin-bottom: 1rem;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .card-title {
+      font-weight: 700; font-size: 0.9rem; margin-bottom: 0.6rem;
+    }
+    .tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      padding: 0.2rem 0.55rem; border-radius: 999px; margin-right: 0.4rem;
+    }
+    .tag-rails { background: #fee2e2; color: #991b1b; }
+    .tag-flutter { background: #dbeafe; color: #1d4ed8; }
+    .tag-new { background: #dcfce7; color: #15803d; }
+    .tag-edit { background: #fef3c7; color: #92400e; }
+    .tag-test { background: #f3e8ff; color: #6b21a8; }
+    .file-path { font-weight: 600; font-size: 0.88rem; }
+    .step-row {
+      display: flex; align-items: flex-start; gap: 0.75rem;
+      padding: 0.75rem 0; border-bottom: 1px solid var(--border);
+    }
+    .step-row:last-child { border-bottom: none; }
+    .step-num {
+      min-width: 24px; height: 24px; border-radius: 50%;
+      background: var(--dark-green); color: white;
+      font-size: 0.72rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      margin-top: 0.1rem;
+    }
+    .step-body { flex: 1; }
+    .step-title { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.2rem; }
+    .step-desc { font-size: 0.85rem; color: var(--muted); }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
+    .verify-item {
+      display: flex; gap: 0.75rem; align-items: flex-start;
+      margin-bottom: 0.6rem; font-size: 0.88rem;
+    }
+    .checkbox {
+      width: 18px; height: 18px; border: 2px solid var(--border);
+      border-radius: 4px; margin-top: 0.1rem; flex-shrink: 0;
+    }
+    .section-label {
+      display: inline-block; font-size: 0.7rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--muted); margin-bottom: 0.5rem;
+    }
+    .flow-box {
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 0.85rem 1rem; text-align: center; font-size: 0.85rem;
+    }
+    .flow-arrow { text-align: center; font-size: 1.2rem; color: var(--muted); padding: 0.25rem 0; }
+    .pr-badge {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px;
+      padding: 0.4rem 0.75rem; font-size: 0.82rem; font-weight: 600;
+      color: #15803d; margin-right: 0.5rem; margin-bottom: 0.5rem;
+    }
+    .pr-badge-draft {
+      background: #f9fafb; border-color: var(--border); color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Companion — Insights Tab: Live Data</h1>
+  <p class="subtitle">Implementation plan · companion branch · August 2026</p>
+
+  <!-- Context -->
+  <h2>Context</h2>
+  <div class="card">
+    <p>The Insights tab (<code>InsightsPreviewScreen</code>) currently shows hardcoded "Coming Soon" placeholders with fake static data. We're wiring it to live Chancen student ISA data stored in a Metabase warehouse.</p>
+    <p>Two PRs exist for reference:</p>
+    <span class="pr-badge">PR #43 — Metabase (OPEN, preferred)</span>
+    <span class="pr-badge pr-badge-draft">PR #44 — Google Sheets (DRAFT, superseded)</span>
+    <p>We implement the Metabase approach from PR #43 onto the <code>companion</code> branch.</p>
+  </div>
+
+  <!-- Files that exist -->
+  <h2>Screen File Inventory</h2>
+  <p>Three files control what the Insights tab renders:</p>
+  <div class="card">
+    <div class="step-row">
+      <div class="step-body">
+        <div class="step-title"><code>mobile/lib/screens/intro_screen.dart</code></div>
+        <div class="step-desc">Conditional import router only — no logic. Imports <code>intro_screen_stub.dart</code> on mobile, <code>intro_screen_web.dart</code> on web. <strong>No changes needed.</strong></div>
+      </div>
+    </div>
+    <div class="step-row">
+      <div class="step-body">
+        <div class="step-title"><code>mobile/lib/screens/intro_screen_stub.dart</code> <span class="tag tag-edit">REWRITE</span></div>
+        <div class="step-desc">The actual mobile UI. Contains all the ISA cards with hardcoded "Coming Soon" and fake values. This is the primary file to update.</div>
+      </div>
+    </div>
+    <div class="step-row">
+      <div class="step-body">
+        <div class="step-title"><code>mobile/lib/screens/intro_screen_web.dart</code> <span class="tag tag-edit">CLEANUP</span></div>
+        <div class="step-desc">Web-only iframe screen showing a plain "Intro experience coming soon" HTML page. Separate concern — discuss whether to update or remove.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data Flow -->
+  <h2>Data Flow</h2>
+  <div class="card">
+    <div class="flow-box" style="background:#f0fdf4; border-color:#bbf7d0">Flutter app (InsightsPreviewScreen)<br/><small>on init → fetches API key from AuthProvider</small></div>
+    <div class="flow-arrow">↓ GET /api/v1/my_account<br/><small style="font-size:0.75rem">X-Api-Key header</small></div>
+    <div class="flow-box" style="background:#eff6ff; border-color:#bfdbfe">Rails: Api::V1::MyAccountController<br/><small>reads Setting.metabase_* config</small></div>
+    <div class="flow-arrow">↓ POST /api/card/:id/query</div>
+    <div class="flow-box" style="background:#fdf4ff; border-color:#e9d5ff">Provider::MetabaseStudentAccount<br/><small>filters rows by email, strips &lt;TODO-MASK-PII&gt; prefix</small></div>
+    <div class="flow-arrow">↑ StudentAccountData (8 fields)</div>
+    <div class="flow-box" style="background:#fff7ed; border-color:#fed7aa">JSON response → StudentAccount.fromJson → MyAccountProvider → UI</div>
+  </div>
+
+  <!-- Rails Changes -->
+  <h2>Rails Changes</h2>
+
+  <div class="card">
+    <div class="card-title"><span class="tag tag-rails">Rails</span><span class="tag tag-edit">Edit</span> <span class="file-path">app/models/setting.rb</span></div>
+    <ul>
+      <li>Add 4 Setting fields after <code>external_assistant_agent_id</code>: <code>metabase_url</code>, <code>metabase_api_key</code>, <code>metabase_student_question_id</code>, <code>metabase_email_param</code></li>
+      <li>Add <code>metabase_api_key</code> to <code>ENCRYPTED_FIELDS</code> (stored encrypted at rest)</li>
+      <li>All fields read from ENV vars as defaults (so they can be set via env or admin UI)</li>
+    </ul>
+    <pre>field :metabase_url,                 type: :string, default: ENV["METABASE_URL"]
+field :metabase_api_key,             type: :string, default: ENV["METABASE_API_KEY"]
+field :metabase_student_question_id, type: :string, default: ENV["METABASE_STUDENT_QUESTION_ID"]
+field :metabase_email_param,         type: :string, default: ENV.fetch("METABASE_EMAIL_PARAM", "email")</pre>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="tag tag-rails">Rails</span><span class="tag tag-new">New</span> <span class="file-path">app/models/provider/metabase_student_account.rb</span></div>
+    <ul>
+      <li>Inherits from <code>Provider</code>; defines <code>Error</code> and <code>StudentAccountData</code> (Ruby 3 <code>Data.define</code> value object)</li>
+      <li><code>find_by_email(email)</code> POSTs to <code>/api/card/:question_id/query</code> via Faraday</li>
+      <li>Parses columnar result (<code>data.cols</code> + <code>data.rows</code>), strips <code>&lt;TODO-MASK-PII&gt;</code> prefix on email column</li>
+      <li>Returns <code>StudentAccountData</code> or <code>nil</code> if no matching row</li>
+    </ul>
+    <p><strong>Column mapping:</strong> <code>contact_email</code>, <code>isa_status</code>, <code>maximum_financed_amount</code>, <code>total_invoiced</code>, <code>total_payment_amount</code>, <code>installments_paid</code>, <code>repayment_period_months_r_1</code>, <code>invoice_currency</code></p>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="tag tag-rails">Rails</span><span class="tag tag-new">New</span> <span class="file-path">app/controllers/api/v1/my_account_controller.rb</span></div>
+    <ul>
+      <li><code>before_action :ensure_read_scope</code></li>
+      <li><code>show</code>: checks 3 Setting values → 503 if missing; calls provider; 404 if nil; 8-field JSON on success</li>
+      <li>Rescues <code>Provider::MetabaseStudentAccount::Error</code> → 502</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="tag tag-rails">Rails</span><span class="tag tag-edit">Edit</span> <span class="file-path">config/routes.rb</span></div>
+    <pre>resource :my_account, only: [:show], controller: :my_account</pre>
+    <p>Inside the <code>namespace :v1</code> API block.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="tag tag-rails">Rails</span><span class="tag tag-edit">Edit</span> <span class="file-path">app/controllers/settings/hostings_controller.rb</span></div>
+    <ul>
+      <li>Add 4 param handlers in <code>update</code>: <code>metabase_url</code>, <code>metabase_api_key</code> (via <code>update_encrypted_setting</code>), <code>metabase_student_question_id</code>, <code>metabase_email_param</code></li>
+      <li>Add all 4 to <code>hosting_params</code> permit list</li>
+    </ul>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title"><span class="tag tag-rails">Rails</span><span class="tag tag-new">New</span> <span class="file-path">app/views/settings/hostings/_metabase_settings.html.erb</span></div>
+      <p>4-field form: URL, API key (password field), question ID, email param. Fields disabled when corresponding ENV var is set. Auto-submit on blur via Stimulus.</p>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="tag tag-rails">Rails</span><span class="tag tag-edit">Edit</span> <span class="file-path">app/views/settings/hostings/show.html.erb</span> + <code>en.yml</code></div>
+      <p>Add a "Metabase (Student Data)" <code>settings_section</code> before the danger zone. Add all i18n keys under <code>metabase_settings:</code> namespace.</p>
+    </div>
+  </div>
+
+  <!-- Tests -->
+  <h2>Tests</h2>
+
+  <div class="card">
+    <div class="card-title"><span class="tag tag-test">Test</span><span class="tag tag-new">New</span> <span class="file-path">test/controllers/api/v1/my_account_controller_test.rb</span></div>
+    <ul>
+      <li>401 without authentication</li>
+      <li>503 when all three Metabase Setting fields are nil</li>
+      <li>404 when <code>find_by_email</code> stubs return nil</li>
+      <li>200 with full JSON body (stub returning <code>StudentAccountData</code>)</li>
+      <li>502 when provider raises <code>MetabaseStudentAccount::Error</code></li>
+    </ul>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title"><span class="tag tag-test">Test</span><span class="tag tag-new">New</span> <span class="file-path">spec/requests/api/v1/my_account_spec.rb</span></div>
+      <p>rswag docs-only spec (4 responses: 200, 401, 503, 404). Uses <code>allow_any_instance_of</code> + <code>run_test!</code>. No assertions — docs only.</p>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="tag tag-test">Test</span><span class="tag tag-edit">Edit</span> <span class="file-path">spec/swagger_helper.rb</span></div>
+      <p>Add <code>StudentAccount</code> schema (8 required fields) under <code>components/schemas</code>.</p>
+    </div>
+  </div>
+
+  <!-- Flutter Changes -->
+  <h2>Flutter Changes</h2>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title"><span class="tag tag-flutter">Flutter</span><span class="tag tag-new">New</span> <span class="file-path">mobile/lib/models/student_account.dart</span></div>
+      <p><code>StudentAccount</code> class with 8 fields (<code>email</code>, <code>status</code>, <code>totalFinanced</code>, <code>repaymentsReceived</code>, <code>maxAmount</code>, <code>installmentsPaid</code>, <code>maxInstallments</code>, <code>currency</code>) + null-safe <code>fromJson</code> factory.</p>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="tag tag-flutter">Flutter</span><span class="tag tag-new">New</span> <span class="file-path">mobile/lib/services/my_account_service.dart</span></div>
+      <p><code>fetchMyAccount(String token)</code> — GET <code>/api/v1/my_account</code>, returns <code>StudentAccount?</code> (null on 404/503, throws on unexpected status).</p>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="tag tag-flutter">Flutter</span><span class="tag tag-new">New</span> <span class="file-path">mobile/lib/providers/my_account_provider.dart</span></div>
+      <p><code>MyAccountProvider extends ChangeNotifier</code> — exposes <code>account</code>, <code>isLoading</code>, <code>error</code>. <code>load()</code> guards against concurrent calls.</p>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="tag tag-flutter">Flutter</span><span class="tag tag-edit">Edit</span> <span class="file-path">mobile/lib/main.dart</span></div>
+      <p>Add import + <code>ChangeNotifierProvider(create: (_) =&gt; MyAccountProvider())</code> to MultiProvider list.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="tag tag-flutter">Flutter</span><span class="tag tag-edit">REWRITE</span> <span class="file-path">mobile/lib/screens/intro_screen_stub.dart</span></div>
+    <p>Key changes to remove all "Coming Soon" placeholders and wire in live data:</p>
+    <ul>
+      <li><strong>State init</strong> — <code>initState()</code> post-frame callback: read API key from <code>AuthProvider</code>, call <code>MyAccountProvider.load(apiKey)</code></li>
+      <li><strong>_AccountSummaryView</strong> — watches <code>MyAccountProvider</code>; derives formatted currency strings via <code>NumberFormat.currency</code>; passes real values to cards</li>
+      <li><strong>_SectionHeaderTile</strong> — remove "Live data - Coming soon" subtitle row; show "My Account" title only</li>
+      <li><strong>_IsaFinancingCard</strong> — remove hardcoded <code>static const</code> values; accept <code>amountPaid</code>, <code>totalFinanced</code>, <code>loading</code>, <code>isaStatus?</code> params</li>
+      <li><strong>_IsaInstalmentsCard</strong> — remove <code>const instalmentsPaid = 9</code>; accept <code>instalmentsPaid</code>, <code>maxInstalments</code>, <code>loading</code> params; dynamic progress calculation</li>
+      <li><strong>_CircularProgress</strong> — add <code>label</code> param; replace <code>'Soon'</code>; center-align text</li>
+      <li><strong>_StatItem</strong> — receives real <code>value</code> (shows <code>'—'</code> when loading); remove italic style</li>
+      <li><strong>IsaStatus</strong> — add <code>fromString(String)</code> factory for API string → enum mapping</li>
+      <li><strong>Imports</strong> — add <code>package:intl/intl.dart</code> and <code>../providers/my_account_provider.dart</code></li>
+    </ul>
+  </div>
+
+  <!-- Cleanup -->
+  <h2>Cleanup Discussion</h2>
+  <div class="card">
+    <div class="card-title">Files to review for cleanup</div>
+    <div class="step-row">
+      <div class="step-body">
+        <div class="step-title"><code>mobile/lib/screens/intro_screen_web.dart</code></div>
+        <div class="step-desc">Shows "Intro experience coming soon" in an iframe. Since Companion is a mobile-only app, this web stub may be unused dead code. Options: (a) delete it — the conditional import in <code>intro_screen.dart</code> would break on web builds, which may be fine; (b) update it to match the mobile UI; (c) leave for now since web builds aren't shipped.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Verification -->
+  <h2>Verification Checklist</h2>
+  <div class="card">
+    <div class="verify-item"><div class="checkbox"></div><div>Configure Metabase in admin settings (<code>/settings/hosting</code>) — URL, API key, question ID</div></div>
+    <div class="verify-item"><div class="checkbox"></div><div>Log in as a student whose email is in the Metabase question → ISA cards show real values</div></div>
+    <div class="verify-item"><div class="checkbox"></div><div>Log in as a non-student → My Account section shows <code>—</code> dashes (graceful 404)</div></div>
+    <div class="verify-item"><div class="checkbox"></div><div>Leave Metabase not configured → endpoint returns 503, Flutter shows <code>—</code> dashes (no crash)</div></div>
+    <div class="verify-item"><div class="checkbox"></div><div><code>bin/rails test test/controllers/api/v1/my_account_controller_test.rb</code> — all 5 pass</div></div>
+    <div class="verify-item"><div class="checkbox"></div><div><code>bin/rubocop -f github -a</code> — no offenses</div></div>
+    <div class="verify-item"><div class="checkbox"></div><div><code>bin/rails test</code> — full test suite passes</div></div>
+  </div>
+
+  <p style="margin-top:2rem; font-size:0.78rem; color:var(--muted);">Generated with Claude Code · companion branch · 2026-08-10</p>
+
+</div>
+</body>
+</html>

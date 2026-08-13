@@ -1,0 +1,43 @@
+BUG: Post-account-deletion navigates to server login instead of first-run screen
+=================================================================================
+
+Reported: 2026-08-11
+Branch: feat/companion-ai-consent (companion)
+Reporter: Felix
+
+DESCRIPTION
+-----------
+When a user deletes their account from within the app, the post-deletion
+navigation lands on the standard login screen (showing the configured server
+URL, e.g. https://companion-prod.chancen.tech) rather than the first-run /
+onboarding screen that new users see on fresh install.
+
+EXPECTED BEHAVIOR
+-----------------
+After account deletion the app should clear all local state (stored server URL,
+tokens, etc.) and navigate to the first-run/onboarding flow — the same screen
+presented on a fresh install with no server configured.
+
+ACTUAL BEHAVIOR
+---------------
+App navigates to the normal login screen with the previously configured server
+URL still populated (https://companion-prod.chancen.tech visible), as if the
+user is simply logging out rather than deleting their account.
+
+LIKELY CAUSE
+------------
+The delete-account flow probably calls the same logout/session-clear path as a
+normal sign-out, which preserves the stored server URL in secure storage.
+The first-run screen is shown only when no server URL is stored, so the user
+never sees it post-deletion.
+
+FIX DIRECTION
+-------------
+After a successful account deletion, also clear the stored server URL (and any
+other first-run flags) from secure storage before navigating, so the app treats
+the next launch as a fresh install.
+
+Relevant files to investigate:
+- mobile/lib/providers/auth_provider.dart  (deleteAccount / logout logic)
+- mobile/lib/services/auth_service.dart    (clearAll / storage keys)
+- mobile/lib/screens/auth/ or onboarding/ (first-run route guard)
