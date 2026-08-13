@@ -13,9 +13,11 @@ class StudentAccount {
   final String email;
   final String status;
   final double totalFinanced;
-  final double repaymentsReceived;
+  // Not yet returned by the Metabase question — null means "unavailable",
+  // distinct from a real 0. The UI renders unavailable fields as "—".
+  final double? repaymentsReceived;
   final double maxAmount;
-  final int installmentsPaid;
+  final int? installmentsPaid;
   final int maxInstallments;
   final String currency;
 
@@ -24,9 +26,9 @@ class StudentAccount {
       email: (json['email'] as String?) ?? '',
       status: (json['status'] as String?) ?? '',
       totalFinanced: _toDouble(json['total_financed']),
-      repaymentsReceived: _toDouble(json['repayments_received']),
+      repaymentsReceived: _toDoubleOrNull(json['repayments_received']),
       maxAmount: _toDouble(json['max_amount']),
-      installmentsPaid: _toInt(json['installments_paid']),
+      installmentsPaid: _toIntOrNull(json['installments_paid']),
       maxInstallments: _toInt(json['max_installments']),
       currency: (json['currency'] as String?) ?? 'KES',
     );
@@ -38,9 +40,21 @@ class StudentAccount {
     return double.tryParse(v.toString()) ?? 0.0;
   }
 
+  static double? _toDoubleOrNull(dynamic v) {
+    if (v == null) return null;
+    if (v is num) return v.toDouble();
+    return double.tryParse(v.toString());
+  }
+
   static int _toInt(dynamic v) {
     if (v == null) return 0;
     if (v is int) return v;
     return int.tryParse(v.toString()) ?? 0;
+  }
+
+  static int? _toIntOrNull(dynamic v) {
+    if (v == null) return null;
+    if (v is int) return v;
+    return int.tryParse(v.toString());
   }
 }

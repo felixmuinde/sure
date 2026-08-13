@@ -12,26 +12,24 @@ const Color _kPurple    = Color(0xFF986EF9);
 
 // ─── ISA status ──────────────────────────────────────────────────────────────
 
+// These four map directly to the values the Chancen ISA warehouse (via
+// Metabase) can return for "ISA Status", plus `applicationStage` for
+// students who don't have a row yet (the /api/v1/my_account 404 case —
+// no ISA contract exists for them so far).
 enum IsaStatus {
   applicationStage,
   contractSigned,
-  repaying,
-  paused,
-  serviceFeeMode,
-  completed,
-  defaulted,
+  graduated,
+  droppedOut,
 }
 
 extension IsaStatusDisplay on IsaStatus {
   String get label {
     switch (this) {
-      case IsaStatus.applicationStage: return 'Application Stage';
-      case IsaStatus.contractSigned:   return 'Graduated';
-      case IsaStatus.repaying:         return 'Repaying';
-      case IsaStatus.paused:           return 'Paused';
-      case IsaStatus.serviceFeeMode:   return 'Service Fee Mode';
-      case IsaStatus.completed:        return 'Completed';
-      case IsaStatus.defaulted:        return 'Defaulted';
+      case IsaStatus.applicationStage: return 'Application';
+      case IsaStatus.contractSigned:   return 'ISA Contract Signed';
+      case IsaStatus.graduated:        return 'Graduated';
+      case IsaStatus.droppedOut:       return 'Drop out';
     }
   }
 
@@ -39,11 +37,8 @@ extension IsaStatusDisplay on IsaStatus {
     switch (this) {
       case IsaStatus.applicationStage: return _kPurple;
       case IsaStatus.contractSigned:   return _kDarkGreen;
-      case IsaStatus.repaying:         return const Color(0xFF10A861);
-      case IsaStatus.paused:           return const Color(0xFFFFA726);
-      case IsaStatus.serviceFeeMode:   return const Color(0xFFFFA726);
-      case IsaStatus.completed:        return const Color(0xFF10A861);
-      case IsaStatus.defaulted:        return const Color(0xFFE53935);
+      case IsaStatus.graduated:        return const Color(0xFF10A861);
+      case IsaStatus.droppedOut:       return const Color(0xFFE53935);
     }
   }
 
@@ -51,35 +46,25 @@ extension IsaStatusDisplay on IsaStatus {
     switch (this) {
       case IsaStatus.applicationStage: return Icons.hourglass_top_outlined;
       case IsaStatus.contractSigned:   return Icons.verified_outlined;
-      case IsaStatus.repaying:         return Icons.trending_up;
-      case IsaStatus.paused:           return Icons.pause_circle_outline;
-      case IsaStatus.serviceFeeMode:   return Icons.work_off_outlined;
-      case IsaStatus.completed:        return Icons.check_circle_outline;
-      case IsaStatus.defaulted:        return Icons.warning_amber_outlined;
+      case IsaStatus.graduated:        return Icons.school_outlined;
+      case IsaStatus.droppedOut:       return Icons.warning_amber_outlined;
     }
   }
 
   static IsaStatus fromString(String s) {
     switch (s.toLowerCase().trim()) {
-      case 'application_stage':
-      case 'application stage':
-      case 'applying':
-        return IsaStatus.applicationStage;
+      case 'isa contract signed':
       case 'contract_signed':
-      case 'graduated':
+      case 'contract signed':
         return IsaStatus.contractSigned;
-      case 'repaying':
-        return IsaStatus.repaying;
-      case 'paused':
-        return IsaStatus.paused;
-      case 'service_fee_mode':
-      case 'service fee mode':
-        return IsaStatus.serviceFeeMode;
-      case 'completed':
-        return IsaStatus.completed;
-      case 'defaulted':
-        return IsaStatus.defaulted;
+      case 'graduated':
+        return IsaStatus.graduated;
+      case 'drop out':
+      case 'dropout':
+      case 'drop_out':
+        return IsaStatus.droppedOut;
       default:
+        // Covers empty/unknown status and the "no ISA record yet" case.
         return IsaStatus.applicationStage;
     }
   }
@@ -121,6 +106,13 @@ class _InsightsPreviewScreenState extends State<InsightsPreviewScreen>
 }
 
 // ─── Summary view ─────────────────────────────────────────────────────────────
+
+// Repayments data isn't returned by the Metabase question yet — null means
+// "unavailable", not zero, so render it the same way the rest of the ISA
+// cards render missing data.
+String? _formatOrDash(double? value, NumberFormat fmt) {
+  return value == null ? null : fmt.format(value);
+}
 
 class _AccountSummaryView extends StatelessWidget {
   const _AccountSummaryView({required this.onRefresh});
@@ -164,24 +156,49 @@ class _AccountSummaryView extends StatelessWidget {
               const SizedBox(height: 20),
               _SectionHeaderTile(theme: theme, isaStatus: isaStatus),
               const SizedBox(height: 16),
-              if (isaStatus == IsaStatus.applicationStage)
-                _ApplicationStageCard(theme: theme, loading: loading)
-              else ...[
-                _IsaFinancingCard(
-                  theme: theme,
-                  isaStatus: isaStatus,
-                  totalFinanced: loading ? null : fmt.format(account!.totalFinanced),
-                  repaymentsReceived: loading ? null : fmt.format(account!.repaymentsReceived),
-                  loading: loading,
-                ),
-                const SizedBox(height: 12),
-                _IsaInstalmentsCard(
-                  theme: theme,
-                  installmentsPaid: loading ? null : account!.installmentsPaid,
-                  maxInstallments: loading ? null : account!.maxInstallments,
-                  loading: loading,
-                ),
-              ],
+              switch (isaStatus) {
+                // Still applying / no ISA contract on file yet — just the
+                // progress explainer. ISA Status badge above already shows.
+                IsaStatus.applicationStage =>
+                  _ApplicationStageCard(theme: theme, loading: loading),
+
+                // Contract signed but not graduated: show financing so far.
+                // Instalment tracking isn't relevant until repayment starts —
+                // later this card becomes tappable to drill into instalments.
+                IsaStatus.contractSigned => _IsaFinancingCard(
+                    theme: theme,
+                    isaStatus: isaStatus,
+                    totalFinanced: loading ? null : fmt.format(account!.totalFinanced),
+                    repaymentsReceived: loading
+                        ? null
+                        : _formatOrDash(account!.repaymentsReceived, fmt),
+                    loading: loading,
+                  ),
+
+                // Graduated or dropped out: repayment tracking is fully
+                // relevant either way, so both cards are always expanded.
+                IsaStatus.graduated || IsaStatus.droppedOut => Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _IsaFinancingCard(
+                        theme: theme,
+                        isaStatus: isaStatus,
+                        totalFinanced: loading ? null : fmt.format(account!.totalFinanced),
+                        repaymentsReceived: loading
+                            ? null
+                            : _formatOrDash(account!.repaymentsReceived, fmt),
+                        loading: loading,
+                      ),
+                      const SizedBox(height: 12),
+                      _IsaInstalmentsCard(
+                        theme: theme,
+                        installmentsPaid: loading ? null : account!.installmentsPaid,
+                        maxInstallments: loading ? null : account!.maxInstallments,
+                        loading: loading,
+                      ),
+                    ],
+                  ),
+              },
             ],
           ),
         ),
@@ -617,9 +634,11 @@ class _IsaInstalmentsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final paid = installmentsPaid ?? 0;
+    // installmentsPaid isn't returned by the Metabase question yet — treat
+    // it as "unknown", not zero, so the ring/label read "—" instead of 0%.
+    final paid = installmentsPaid;
     final max = maxInstallments ?? 1;
-    final progress = max > 0 ? (paid / max).clamp(0.0, 1.0) : 0.0;
+    final progress = (paid != null && max > 0) ? (paid / max).clamp(0.0, 1.0) : 0.0;
     final pct = (progress * 100).round();
 
     return Container(
@@ -642,7 +661,7 @@ class _IsaInstalmentsCard extends StatelessWidget {
             _CircularProgress(
               progress: loading ? 0.0 : progress,
               color: _kGreen,
-              label: loading ? '—' : '$pct%',
+              label: loading ? '—' : (paid != null ? '$pct%' : '—'),
             ),
             const SizedBox(width: 20),
             Expanded(
@@ -674,7 +693,7 @@ class _IsaInstalmentsCard extends StatelessWidget {
                   const SizedBox(height: 14),
                   _StatItem(
                     label: 'Paid So Far',
-                    value: loading ? null : '$paid',
+                    value: loading ? null : (paid != null ? '$paid' : null),
                     theme: theme,
                     align: CrossAxisAlignment.start,
                   ),
