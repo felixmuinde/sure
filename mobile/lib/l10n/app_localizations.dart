@@ -340,6 +340,36 @@ abstract class AppLocalizations {
   /// **'Delete Chat'**
   String get chatListDeleteTitle;
 
+  /// Header shown in the chat drawer while chats are selected for bulk actions.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String chatListSelectedCount(int count);
+
+  /// Tooltip to select every chat in the drawer's selection mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all'**
+  String get chatListSelectAll;
+
+  /// Tooltip to clear the current chat selection in the drawer's selection mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Deselect all'**
+  String get chatListDeselectAll;
+
+  /// Tooltip for the bulk-delete action in the chat drawer's selection mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete selected'**
+  String get chatListDeleteSelectedTooltip;
+
+  /// Tooltip on the chat title hinting that a long-press renames the conversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Long-press to rename'**
+  String get chatConversationRenameTooltip;
+
   /// Placeholder title for a new conversation before it is saved.
   ///
   /// In en, this message translates to:

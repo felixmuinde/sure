@@ -135,6 +135,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatListDeleteTitle => 'Delete Chat';
 
   @override
+  String chatListSelectedCount(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String get chatListSelectAll => 'Select all';
+
+  @override
+  String get chatListDeselectAll => 'Deselect all';
+
+  @override
+  String get chatListDeleteSelectedTooltip => 'Delete selected';
+
+  @override
+  String get chatConversationRenameTooltip => 'Long-press to rename';
+
+  @override
   String get chatConversationNewTitle => 'New Conversation';
 
   @override

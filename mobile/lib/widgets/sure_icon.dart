@@ -101,4 +101,10 @@ abstract final class SureIcons {
   static const String chevronUp = 'chevron-up';
   static const String chevronDown = 'chevron-down';
   static const String chevronRight = 'chevron-right';
+  static const String menu = 'menu';
+  static const String x = 'x';
+  static const String pencil = 'pencil';
+  static const String trash = 'trash';
+  static const String square = 'square';
+  static const String squareCheckBig = 'square-check-big';
 }

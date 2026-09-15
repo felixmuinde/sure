@@ -183,6 +183,47 @@ void main() {
     handle.dispose();
   });
 
+  testWidgets('onLongPress fires and makes the row interactive without onTap',
+      (tester) async {
+    var longPresses = 0;
+    await pump(
+      tester,
+      SureListGroup(
+        children: [
+          SureListRow(title: 'Hold me', onLongPress: () => longPresses++),
+        ],
+      ),
+    );
+    expect(find.byType(InkWell), findsOneWidget);
+    await tester.longPress(find.text('Hold me'));
+    expect(longPresses, 1);
+  });
+
+  for (final (brightness, tokens) in [
+    (Brightness.light, SureTokens.light),
+    (Brightness.dark, SureTokens.dark),
+  ]) {
+    testWidgets('selected row paints the containerHover background (${brightness.name})',
+        (tester) async {
+      await pump(
+        tester,
+        const SureListGroup(
+          children: [SureListRow(title: 'Active chat', selected: true)],
+        ),
+        brightness: brightness,
+      );
+      final rowContainer = tester.widget<Container>(
+        find
+            .descendant(
+              of: find.byType(SureListRow),
+              matching: find.byType(Container),
+            )
+            .first,
+      );
+      expect(rowContainer.color, tokens.containerHover);
+    });
+  }
+
   testWidgets('an empty group builds no chrome', (tester) async {
     await pump(tester, const SureListGroup(children: []));
     // No decorated container and no dividers — it collapses rather than

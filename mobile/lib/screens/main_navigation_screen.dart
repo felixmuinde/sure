@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/privacy_provider.dart';
 import '../widgets/sure_logo.dart';
-import 'chat_list_screen.dart';
+import 'chat_conversation_screen.dart';
 import 'dashboard_screen.dart';
 import 'intro_screen.dart';
 import 'more_screen.dart';
@@ -33,7 +33,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       screens.add(IntroScreen(onStartChat: onStartChat));
     }
 
-    screens.add(const ChatListScreen());
+    screens.add(const ChatConversationScreen(chatId: null, showDrawer: true));
 
     if (!introLayout) {
       screens.add(const MoreScreen());

@@ -124,6 +124,24 @@
   "chatListDeleteTitle": "Delete Chat",
   "@chatListDeleteTitle": { "description": "Title for the delete-chat confirmation dialog." },
 
+  "chatListSelectedCount": "{count} selected",
+  "@chatListSelectedCount": {
+    "description": "Header shown in the chat drawer while chats are selected for bulk actions.",
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "chatListSelectAll": "Select all",
+  "@chatListSelectAll": { "description": "Tooltip to select every chat in the drawer's selection mode." },
+
+  "chatListDeselectAll": "Deselect all",
+  "@chatListDeselectAll": { "description": "Tooltip to clear the current chat selection in the drawer's selection mode." },
+
+  "chatListDeleteSelectedTooltip": "Delete selected",
+  "@chatListDeleteSelectedTooltip": { "description": "Tooltip for the bulk-delete action in the chat drawer's selection mode." },
+
+  "chatConversationRenameTooltip": "Long-press to rename",
+  "@chatConversationRenameTooltip": { "description": "Tooltip on the chat title hinting that a long-press renames the conversation." },
+
   "chatConversationNewTitle": "New Conversation",
   "@chatConversationNewTitle": { "description": "Placeholder title for a new conversation before it is saved." },
 

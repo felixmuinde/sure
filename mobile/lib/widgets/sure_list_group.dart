@@ -109,10 +109,11 @@ class SureListGroup extends StatelessWidget {
 /// a [title] (+ optional [subtitle]), and a trailing affordance — either an
 /// explicit [trailing] widget or a DS chevron when [showChevron] is set.
 ///
-/// The row paints no background or border of its own; it relies on the enclosing
-/// [SureListGroup] for chrome, dividers, and corner clipping. When [onTap] is
-/// provided the whole row is tappable with a flat ink response (clipped to the
-/// group's rounded corners by the group's `antiAlias`).
+/// The row paints no border of its own — and no background unless [selected] —
+/// so it relies on the enclosing [SureListGroup] for chrome, dividers, and
+/// corner clipping. When [onTap] or [onLongPress] is provided the whole row is
+/// tappable with a flat ink response (clipped to the group's rounded corners
+/// by the group's `antiAlias`).
 class SureListRow extends StatelessWidget {
   const SureListRow({
     super.key,
@@ -121,8 +122,10 @@ class SureListRow extends StatelessWidget {
     this.leading,
     this.trailing,
     this.onTap,
+    this.onLongPress,
     this.showChevron = false,
     this.destructive = false,
+    this.selected = false,
   });
 
   final String title;
@@ -139,12 +142,21 @@ class SureListRow extends StatelessWidget {
   /// When non-null, the row is tappable.
   final VoidCallback? onTap;
 
+  /// When non-null, the row responds to a long press (e.g. entering a
+  /// multi-select mode). Can be set independently of [onTap].
+  final VoidCallback? onLongPress;
+
   /// Show a DS chevron disclosure indicator on the trailing edge. Ignored when
   /// an explicit [trailing] is provided.
   final bool showChevron;
 
   /// Render the title in the destructive token (for delete/reset actions).
   final bool destructive;
+
+  /// Paints the row with the [SureTokenPalette.containerHover] background to
+  /// mark it as the active/selected row within the group (e.g. the current
+  /// chat in a chat-switcher list).
+  final bool selected;
 
   @override
   Widget build(BuildContext context) {
@@ -160,7 +172,8 @@ class SureListRow extends StatelessWidget {
       );
     }
 
-    Widget content = Padding(
+    Widget content = Container(
+      color: selected ? palette.containerHover : null,
       padding: const EdgeInsets.symmetric(horizontal: SureSpacing.xl, vertical: 14),
       child: Row(
         children: [
@@ -201,7 +214,7 @@ class SureListRow extends StatelessWidget {
       ),
     );
 
-    if (onTap != null) {
+    if (onTap != null || onLongPress != null) {
       // Material(transparency) gives the InkWell a surface to paint on without
       // covering the group's tokenized background. No borderRadius here — the
       // group clips the ripple to its rounded corners via clipBehavior.
@@ -214,7 +227,7 @@ class SureListRow extends StatelessWidget {
           enabled: true,
           child: Material(
             type: MaterialType.transparency,
-            child: InkWell(onTap: onTap, child: content),
+            child: InkWell(onTap: onTap, onLongPress: onLongPress, child: content),
           ),
         ),
       );
