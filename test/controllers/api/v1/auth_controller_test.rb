@@ -1277,6 +1277,187 @@ class Api::V1::AuthControllerTest < ActionDispatch::IntegrationTest
     assert_equal "identity_token is required", data["error"]
   end
 
+  test "google_sign_in logs in returning user by existing Google UID" do
+    user = users(:family_admin)
+    google_uid = "google.uid.returning"
+    OidcIdentity.create!(
+      user: user,
+      provider: "google",
+      uid: google_uid,
+      issuer: "https://accounts.google.com",
+      info: { email: user.email },
+      last_authenticated_at: 1.day.ago
+    )
+
+    GoogleSignIn.stubs(:verify!).returns({ "sub" => google_uid, "email" => user.email, "iss" => "https://accounts.google.com" })
+
+    assert_no_difference("User.count") do
+      assert_difference("Doorkeeper::AccessToken.count", 1) do
+        post "/api/v1/auth/google_sign_in", params: {
+          identity_token: "fake.token",
+          device: @device_info
+        }
+      end
+    end
+
+    assert_response :success
+    data = JSON.parse(response.body)
+    assert data["access_token"].present?
+    assert_equal user.id.to_s, data["user"]["id"]
+  end
+
+  test "google_sign_in links existing user by email when no Google UID identity exists" do
+    user = users(:family_admin)
+    google_uid = "google.uid.new-for-existing-email"
+
+    GoogleSignIn.stubs(:verify!).returns({ "sub" => google_uid, "email" => user.email, "iss" => "https://accounts.google.com" })
+
+    assert_no_difference("User.count") do
+      assert_difference("OidcIdentity.count", 1) do
+        assert_difference("Doorkeeper::AccessToken.count", 1) do
+          post "/api/v1/auth/google_sign_in", params: {
+            identity_token: "fake.token",
+            device: @device_info
+          }
+        end
+      end
+    end
+
+    assert_response :success
+    data = JSON.parse(response.body)
+    assert_equal user.id.to_s, data["user"]["id"]
+    assert OidcIdentity.exists?(user: user, provider: "google", uid: google_uid)
+  end
+
+  test "google_sign_in creates new account for unknown Google ID with email in JWT" do
+    google_uid = "google.uid.brand-new"
+    google_email = "brandnew-google@example.com"
+
+    GoogleSignIn.stubs(:verify!).returns({ "sub" => google_uid, "email" => google_email, "iss" => "https://accounts.google.com" })
+
+    assert_difference("User.count", 1) do
+      assert_difference("OidcIdentity.count", 1) do
+        assert_difference("Doorkeeper::AccessToken.count", 1) do
+          post "/api/v1/auth/google_sign_in", params: {
+            identity_token: "fake.token",
+            first_name: "Google",
+            last_name: "Reviewer",
+            device: @device_info
+          }
+        end
+      end
+    end
+
+    assert_response :success
+    data = JSON.parse(response.body)
+    assert data["access_token"].present?
+    assert_equal google_email, data["user"]["email"]
+    assert_equal "Google", data["user"]["first_name"]
+
+    new_user = User.find_by!(email: google_email)
+    assert OidcIdentity.exists?(user: new_user, provider: "google", uid: google_uid)
+    assert_nil new_user.password_digest, "Google-created account must be SSO-only (no password digest)"
+    assert new_user.sso_only?, "Google-created account must be SSO-only"
+  end
+
+  test "google_sign_in new account with pending invitation joins invitation family and role" do
+    invitation = invitations(:one)
+    google_uid = "google.uid.invited"
+
+    GoogleSignIn.stubs(:verify!).returns({ "sub" => google_uid, "email" => invitation.email, "iss" => "https://accounts.google.com" })
+
+    assert_difference("User.count", 1) do
+      post "/api/v1/auth/google_sign_in", params: {
+        identity_token: "fake.token",
+        device: @device_info
+      }
+    end
+
+    assert_response :success
+    new_user = User.find_by!(email: invitation.email)
+    assert_equal invitation.family, new_user.family
+    assert_equal invitation.role, new_user.role
+    assert_nil new_user.password_digest
+    assert invitation.reload.accepted_at.present?, "invitation should be marked accepted"
+  end
+
+  test "google_sign_in returns 403 when invite-only default family is unavailable and no invitation" do
+    Setting.onboarding_state = "invite_only"
+    Setting.invite_only_default_family_id = 0.to_s  # non-existent family
+
+    google_uid = "google.uid.blocked"
+    google_email = "blocked-google@example.com"
+
+    GoogleSignIn.stubs(:verify!).returns({ "sub" => google_uid, "email" => google_email, "iss" => "https://accounts.google.com" })
+
+    assert_no_difference("User.count") do
+      post "/api/v1/auth/google_sign_in", params: {
+        identity_token: "fake.token",
+        device: @device_info
+      }
+    end
+
+    assert_response :forbidden
+    data = JSON.parse(response.body)
+    assert_match(/unavailable/, data["error"])
+  end
+
+  test "google_sign_in returns 422 when no email in JWT and no email param" do
+    google_uid = "google.uid.no-email"
+
+    GoogleSignIn.stubs(:verify!).returns({ "sub" => google_uid, "email" => nil, "iss" => "https://accounts.google.com" })
+
+    assert_no_difference("User.count") do
+      post "/api/v1/auth/google_sign_in", params: {
+        identity_token: "fake.token",
+        device: @device_info
+      }
+    end
+
+    assert_response :unprocessable_entity
+    data = JSON.parse(response.body)
+    assert_match(/email/, data["error"])
+  end
+
+  test "google_sign_in returns 401 for invalid identity token" do
+    GoogleSignIn.stubs(:verify!).raises(GoogleSignIn::Error, "Signature verification failed")
+
+    assert_no_difference("User.count") do
+      post "/api/v1/auth/google_sign_in", params: {
+        identity_token: "bad.token",
+        device: @device_info
+      }
+    end
+
+    assert_response :unauthorized
+    data = JSON.parse(response.body)
+    assert_equal "Invalid Google identity token", data["error"]
+  end
+
+  test "google_sign_in returns 400 without device info" do
+    GoogleSignIn.stubs(:verify!).returns({ "sub" => "uid", "email" => "test@example.com", "iss" => "https://accounts.google.com" })
+
+    assert_no_difference("User.count") do
+      post "/api/v1/auth/google_sign_in", params: {
+        identity_token: "fake.token"
+      }
+    end
+
+    assert_response :bad_request
+    data = JSON.parse(response.body)
+    assert_equal "Device information is required", data["error"]
+  end
+
+  test "google_sign_in returns 400 without identity token" do
+    post "/api/v1/auth/google_sign_in", params: {
+      device: @device_info
+    }
+
+    assert_response :bad_request
+    data = JSON.parse(response.body)
+    assert_equal "identity_token is required", data["error"]
+  end
+
   # ── Password reset ────────────────────────────────────────────────────────
 
   test "request_password_reset returns 200 and queues email for known user" do

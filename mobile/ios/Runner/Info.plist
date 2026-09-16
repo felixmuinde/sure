@@ -49,6 +49,11 @@
 	<true/>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Authenticate with Face ID to unlock the app</string>
+	<!-- Native Google Sign-In (google_sign_in package). Replace with the iOS
+	     OAuth client ID from Google Cloud Console (separate from the web
+	     GOOGLE_OAUTH_CLIENT_ID). -->
+	<key>GIDClientID</key>
+	<string>REPLACE_WITH_GOOGLE_IOS_CLIENT_ID.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -57,6 +62,17 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>sureapp</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<!-- The GIDClientID above, reversed (Google Cloud Console shows
+				     this exact value as "REVERSED_CLIENT_ID" on the iOS OAuth
+				     client's config page). -->
+				<string>REPLACE_WITH_REVERSED_GOOGLE_IOS_CLIENT_ID</string>
 			</array>
 		</dict>
 	</array>

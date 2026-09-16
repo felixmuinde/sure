@@ -274,6 +274,66 @@ module Api
         render json: { error: "Invalid Apple identity token" }, status: :unauthorized
       end
 
+      # Native Google Sign-In (device account picker) — distinct from the
+      # browser + sso_exchange path used for other/web-configured providers.
+      def google_sign_in
+        unless valid_device_info?
+          render json: { error: "Device information is required" }, status: :bad_request
+          return
+        end
+
+        identity_token = params[:identity_token]
+        if identity_token.blank?
+          render json: { error: "identity_token is required" }, status: :bad_request
+          return
+        end
+
+        claims = GoogleSignIn.verify!(identity_token)
+        google_uid = claims["sub"]
+        email      = claims["email"].presence || params[:email].presence
+
+        identity = OidcIdentity.find_by(provider: "google", uid: google_uid)
+
+        user = if identity
+          identity.user
+        elsif email.present? && (existing_user = User.find_by(email: email))
+          OidcIdentity.create!(
+            user: existing_user,
+            provider: "google",
+            uid: google_uid,
+            issuer: claims["iss"],
+            info: {
+              email: email,
+              first_name: params[:first_name].presence || existing_user.first_name,
+              last_name: params[:last_name].presence || existing_user.last_name
+            },
+            last_authenticated_at: Time.current
+          )
+          existing_user
+        else
+          unless email.present?
+            render json: { error: "Please share your email address with Companion to continue." }, status: :unprocessable_entity
+            return
+          end
+
+          new_user = jit_create_sso_user(
+            email:      email,
+            first_name: params[:first_name].presence || email.split("@").first,
+            last_name:  params[:last_name].presence  || "",
+            provider:   "google",
+            uid:        google_uid,
+            issuer:     claims["iss"]
+          )
+          return unless new_user
+          new_user
+        end
+
+        issue_mobile_tokens(user, device_params)
+      rescue GoogleSignIn::Error => e
+        Rails.logger.warn("[Auth] Google Sign-In verification failed: #{e.message}")
+        render json: { error: "Invalid Google identity token" }, status: :unauthorized
+      end
+
       def request_password_reset
         email = params[:email].to_s.strip.downcase
         user = User.find_by(email: email)

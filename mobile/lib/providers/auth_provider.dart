@@ -1,5 +1,6 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/user.dart';
@@ -301,6 +302,72 @@ class AuthProvider with ChangeNotifier {
     } catch (e, stackTrace) {
       LogService.instance.error('AuthProvider', 'Apple Sign-In error: $e\n$stackTrace');
       _errorMessage = 'Apple Sign-In failed. Please try again.';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Native Google Sign-In (device account picker) — no browser hop, unlike
+  /// [startSsoLogin]. Mirrors [signInWithApple]'s shape.
+  Future<bool> signInWithGoogle() async {
+    _errorMessage = null;
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final googleSignIn = GoogleSignIn(scopes: [ 'email', 'profile' ]);
+      final account = await googleSignIn.signIn();
+
+      if (account == null) {
+        // User dismissed the account picker.
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+
+      final googleAuth = await account.authentication;
+      final identityToken = googleAuth.idToken;
+      if (identityToken == null) {
+        _errorMessage = 'Google Sign-In failed: no identity token received.';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+
+      // GoogleSignInAccount exposes a single displayName, unlike Apple's
+      // separate given/family name fields — split it best-effort; the
+      // backend falls back to the email's local part when both are blank.
+      final nameParts =
+          account.displayName?.trim().split(RegExp(r'\s+')) ?? const [];
+      final firstName = nameParts.isNotEmpty ? nameParts.first : null;
+      final lastName =
+          nameParts.length > 1 ? nameParts.sublist(1).join(' ') : null;
+
+      final deviceInfo = await _deviceService.getDeviceInfo();
+      final result = await _authService.googleSignIn(
+        identityToken: identityToken,
+        deviceInfo: deviceInfo,
+        firstName: firstName,
+        lastName: lastName,
+        email: account.email,
+      );
+
+      if (result['success'] == true) {
+        _tokens = result['tokens'] as AuthTokens?;
+        _user = result['user'] as User?;
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      } else {
+        _errorMessage = result['error'] as String?;
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+    } catch (e, stackTrace) {
+      LogService.instance.error('AuthProvider', 'Google Sign-In error: $e\n$stackTrace');
+      _errorMessage = 'Google Sign-In failed. Please try again.';
       _isLoading = false;
       notifyListeners();
       return false;

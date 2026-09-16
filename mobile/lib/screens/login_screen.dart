@@ -360,7 +360,7 @@ class _LoginFormBodyState extends State<LoginFormBody> {
               return OutlinedButton.icon(
                 onPressed: authProvider.isLoading
                     ? null
-                    : () => authProvider.startSsoLogin('google_oauth2'),
+                    : () => authProvider.signInWithGoogle(),
                 icon: SvgPicture.asset(
                   'assets/images/google_g_logo.svg',
                   width: 18,
