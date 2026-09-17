@@ -974,5 +974,26 @@
   },
 
   "chatConversationStartFailed": "Failed to start conversation. Please try again.",
-  "@chatConversationStartFailed": { "description": "Fallback snackbar shown when creating a new conversation from the first message fails." }
+  "@chatConversationStartFailed": { "description": "Fallback snackbar shown when creating a new conversation from the first message fails." },
+
+  "chatDrawerMenuTooltip": "Chats",
+  "@chatDrawerMenuTooltip": { "description": "Tooltip for the hamburger icon that opens the chat list drawer." },
+
+  "chatDrawerSelectedCount": "{count} selected",
+  "@chatDrawerSelectedCount": {
+    "description": "Header shown in the chat drawer while chats are selected for bulk actions.",
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "chatDrawerSelectAll": "Select all",
+  "@chatDrawerSelectAll": { "description": "Tooltip for the button that selects every chat in the drawer." },
+
+  "chatDrawerDeselectAll": "Deselect all",
+  "@chatDrawerDeselectAll": { "description": "Tooltip for the button that clears the current chat selection in the drawer." },
+
+  "chatDrawerDeleteSelectedTooltip": "Delete selected",
+  "@chatDrawerDeleteSelectedTooltip": { "description": "Tooltip for the button that deletes the selected chats in the drawer." },
+
+  "chatConversationRenameTooltip": "Long-press to rename",
+  "@chatConversationRenameTooltip": { "description": "Tooltip shown on the conversation title hinting that a long-press renames the chat." }
 }

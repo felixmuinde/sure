@@ -1030,4 +1030,24 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get chatConversationStartFailed =>
       'Failed to start conversation. Please try again.';
+
+  @override
+  String get chatDrawerMenuTooltip => 'Chats';
+
+  @override
+  String chatDrawerSelectedCount(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String get chatDrawerSelectAll => 'Select all';
+
+  @override
+  String get chatDrawerDeselectAll => 'Deselect all';
+
+  @override
+  String get chatDrawerDeleteSelectedTooltip => 'Delete selected';
+
+  @override
+  String get chatConversationRenameTooltip => 'Long-press to rename';
 }

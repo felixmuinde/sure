@@ -1911,6 +1911,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to start conversation. Please try again.'**
   String get chatConversationStartFailed;
+
+  /// Tooltip for the hamburger icon that opens the chat list drawer.
+  ///
+  /// In en, this message translates to:
+  /// **'Chats'**
+  String get chatDrawerMenuTooltip;
+
+  /// Header shown in the chat drawer while chats are selected for bulk actions.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String chatDrawerSelectedCount(int count);
+
+  /// Tooltip for the button that selects every chat in the drawer.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all'**
+  String get chatDrawerSelectAll;
+
+  /// Tooltip for the button that clears the current chat selection in the drawer.
+  ///
+  /// In en, this message translates to:
+  /// **'Deselect all'**
+  String get chatDrawerDeselectAll;
+
+  /// Tooltip for the button that deletes the selected chats in the drawer.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete selected'**
+  String get chatDrawerDeleteSelectedTooltip;
+
+  /// Tooltip shown on the conversation title hinting that a long-press renames the chat.
+  ///
+  /// In en, this message translates to:
+  /// **'Long-press to rename'**
+  String get chatConversationRenameTooltip;
 }
 
 class _AppLocalizationsDelegate
