@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
+import 'package:upgrader/upgrader.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/auth_provider.dart';
 import '../providers/categories_provider.dart';
+import '../providers/merchants_provider.dart';
+import '../providers/tags_provider.dart';
 import '../providers/theme_provider.dart';
+import '../providers/privacy_provider.dart';
 import '../services/offline_storage_service.dart';
 import '../services/log_service.dart';
 import '../services/biometric_service.dart';
 import '../services/preferences_service.dart';
 import '../services/user_service.dart';
-import 'backend_config_screen.dart';
 import 'log_viewer_screen.dart';
 import '../models/custom_proxy_header.dart';
 import '../services/api_config.dart';
 import '../services/custom_proxy_headers_service.dart';
 import '../widgets/custom_proxy_headers_editor.dart';
+import '../l10n/app_localizations.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -25,40 +29,116 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _isDeletingAccount = false;
+  bool _groupByType = false;
+  String? _appVersion;
+  // Identifiers for the in-progress destructive action. Defined once so the
+  // discriminator can't drift via a mistyped string literal across handlers and
+  // tiles.
+  static const String _clearAction = 'clear';
+  static const String _resetAction = 'reset';
+  static const String _deleteAction = 'delete';
+  // Tracks which destructive action is in progress (one of the constants above),
+  // or null when idle. Used to disable all three tiles while any one is running.
+  String? _activeDestructiveAction;
   bool _biometricSupported = false;
   bool _biometricEnabled = false;
   bool _isTogglingBiometric = false;
-  bool _themeExpanded = false;
-  // dev-mode easter egg
-  bool _devMode = false;
-  int _devTapCount = 0;
-  // debug-only state (loaded when dev mode is activated)
-  bool _groupByType = false;
-  String? _appVersion;
   List<CustomProxyHeader> _customHeaders = [];
+  bool _isCheckingForUpdate = false;
+  late final Upgrader _manualUpgrader;
+
+  String _displayInitial(String? displayName) {
+    final trimmed = displayName?.trim() ?? '';
+    return trimmed.isEmpty ? 'U' : trimmed[0].toUpperCase();
+  }
 
   @override
   void initState() {
     super.initState();
-    _loadBiometricState();
+    _loadPreferences();
     _loadAppVersion();
+    _loadBiometricState();
+    _loadCustomHeaders();
+    _manualUpgrader = Upgrader(
+      durationUntilAlertAgain: Duration.zero,
+      countryCode: 'us',
+    );
   }
 
-  void _onAvatarTap() {
-    _devTapCount++;
-    if (_devTapCount >= 7) {
-      _devTapCount = 0;
-      setState(() => _devMode = !_devMode);
-      if (_devMode) {
-        _loadPreferences();
-        _loadAppVersion();
-        _loadCustomHeaders();
+  Future<void> _checkForUpdate() async {
+    if (_isCheckingForUpdate) return;
+    setState(() => _isCheckingForUpdate = true);
+    try {
+      await _manualUpgrader.initialize();
+      if (!mounted) {
+        _manualUpgrader.dispose();
+        return;
+      }
+      await _manualUpgrader.updateVersionInfo();
+      if (!mounted) return;
+
+      final available = _manualUpgrader.isUpdateAvailable();
+      final storeVersion = _manualUpgrader.versionInfo?.appStoreVersion?.toString();
+      final storeUrl = _manualUpgrader.versionInfo?.appStoreListingURL;
+
+      if (available) {
+        await _showUpdateDialog(
+          storeVersion ??
+              AppLocalizations.of(context).settingsUpdateNewerVersionFallback,
+          storeUrl,
+        );
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Developer mode enabled')),
+          SnackBar(content: Text(AppLocalizations.of(context).settingsNoUpdateAvailable)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context).settingsUpdateError)),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isCheckingForUpdate = false);
+    }
+  }
+
+  Future<void> _showUpdateDialog(String version, String? storeUrl) async {
+    final launch = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(AppLocalizations.of(ctx).settingsUpdateAvailableTitle),
+        content: Text(AppLocalizations.of(ctx).settingsUpdateAvailableContent(version)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(AppLocalizations.of(ctx).commonCancel),
+          ),
+          TextButton(
+            onPressed: storeUrl == null ? null : () => Navigator.pop(ctx, true),
+            child: Text(AppLocalizations.of(ctx).settingsUpdateNow),
+          ),
+        ],
+      ),
+    );
+
+    if (launch == true && storeUrl != null && mounted) {
+      final uri = Uri.tryParse(storeUrl);
+      final opened = uri != null
+          ? await launchUrl(uri, mode: LaunchMode.externalApplication)
+          : false;
+      if (!opened && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context).settingsUpdateOpenStoreError)),
         );
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _manualUpgrader.dispose();
+    super.dispose();
   }
 
   Future<void> _loadBiometricState() async {
@@ -81,12 +161,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       if (value) {
         final success = await BiometricService.instance.authenticate(
-          reason: 'Verify biometric to enable app lock',
+          reason: AppLocalizations.of(context).settingsBiometricVerifyReason,
         );
         if (!mounted) return;
         if (!success) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Biometric authentication failed.')),
+            SnackBar(content: Text(AppLocalizations.of(context).settingsBiometricFailed)),
           );
           return;
         }
@@ -111,44 +191,271 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadPreferences() async {
     final groupByType = await PreferencesService.instance.getGroupByType();
-    if (mounted) setState(() => _groupByType = groupByType);
+    if (mounted) {
+      setState(() {
+        _groupByType = groupByType;
+      });
+    }
   }
 
   Future<void> _loadCustomHeaders() async {
     try {
       final headers = await CustomProxyHeadersService.instance.loadHeaders(backendUrl: ApiConfig.baseUrl);
-      if (mounted) setState(() => _customHeaders = headers);
-    } catch (e, stack) {
-      debugPrint('SettingsScreen: failed to load custom headers: $e\n$stack');
+      if (mounted) {
+        setState(() => _customHeaders = headers);
+      }
+    } catch (e) {
+      LogService.instance.warning(
+        'SettingsScreen',
+        'Failed to load custom headers with ${e.runtimeType}',
+      );
+      // Keep the existing _customHeaders state so the screen remains usable.
     }
   }
 
-  void _openBackendSwitcher() {
-    final urlBeforeSwitch = ApiConfig.baseUrl;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (routeContext) => BackendConfigScreen(
-          onConfigSaved: () => _onBackendSwitched(routeContext, urlBeforeSwitch),
-        ),
-      ),
+  Future<void> _handleClearLocalData(BuildContext context) async {
+    final l = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        final l = AppLocalizations.of(context);
+        return AlertDialog(
+        title: Text(l.settingsClearDataTitle),
+        content: Text(l.settingsClearDataContent),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l.commonCancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: Text(l.settingsClearData),
+          ),
+        ],
+      );},
     );
+
+    if (confirmed == true && context.mounted) {
+      setState(() => _activeDestructiveAction = _clearAction);
+      try {
+        final offlineStorage = OfflineStorageService();
+        final log = LogService.instance;
+
+        log.info('Settings', 'Clearing all local data...');
+        await offlineStorage.clearAllData();
+        if (context.mounted) {
+          Provider.of<CategoriesProvider>(context, listen: false).clear();
+          Provider.of<MerchantsProvider>(context, listen: false).clear();
+          Provider.of<TagsProvider>(context, listen: false).clear();
+        }
+        log.info('Settings', 'Local data cleared successfully');
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l.settingsClearDataSuccessDetailed),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      } catch (e) {
+        final log = LogService.instance;
+        log.error(
+          'Settings',
+          'Failed to clear local data with ${e.runtimeType}',
+        );
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l.settingsClearDataFailed),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _activeDestructiveAction = null);
+      }
+    }
   }
 
-  /// Switching backend mid-session leaves an auth token that belongs to the
-  /// old environment, so sign out and drop back to the root (Login) rather
-  /// than leaving a broken authenticated screen up.
-  Future<void> _onBackendSwitched(BuildContext routeContext, String previousUrl) async {
-    if (ApiConfig.normalizeUrl(ApiConfig.baseUrl) == ApiConfig.normalizeUrl(previousUrl)) return;
-    final authProvider = Provider.of<AuthProvider>(routeContext, listen: false);
-    final navigator = Navigator.of(routeContext);
-    await authProvider.logout();
-    navigator.popUntil((route) => route.isFirst);
+  Future<void> _launchContactUrl(BuildContext context) async {
+    final l = AppLocalizations.of(context);
+    final uri = Uri.parse('https://discord.com/invite/36ZGBsxYEK');
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l.settingsContactOpenLinkError)),
+      );
+    }
+  }
+
+  Future<void> _handleResetAccount(BuildContext context) async {
+    final l = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        final dl = AppLocalizations.of(context);
+        return AlertDialog(
+          title: Text(dl.settingsResetAccount),
+          content: Text(dl.settingsResetAccountContent),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(dl.commonCancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.error,
+              ),
+              child: Text(dl.settingsResetAccount),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    setState(() => _activeDestructiveAction = _resetAction);
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final accessToken = await authProvider.getValidAccessToken();
+      if (accessToken == null) {
+        await authProvider.logout();
+        return;
+      }
+
+      final result = await UserService().resetAccount(accessToken: accessToken);
+
+      if (!context.mounted) return;
+
+      if (result['success'] == true) {
+        await OfflineStorageService().clearAllData();
+        if (context.mounted) {
+          Provider.of<CategoriesProvider>(context, listen: false).clear();
+          Provider.of<MerchantsProvider>(context, listen: false).clear();
+          Provider.of<TagsProvider>(context, listen: false).clear();
+        }
+
+        if (!context.mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l.settingsResetAccountInitiated),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        await authProvider.logout();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['error'] ?? l.settingsResetAccountFailed),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _activeDestructiveAction = null);
+    }
+  }
+
+  Future<void> _handleDeleteAccount(BuildContext context) async {
+    final l = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        final dl = AppLocalizations.of(context);
+        return AlertDialog(
+          title: Text(dl.settingsDeleteAccountTitle),
+          content: Text(dl.settingsDeleteAccountConfirmContent),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(dl.commonCancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.error,
+              ),
+              child: Text(dl.settingsDeleteAccount),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    setState(() => _activeDestructiveAction = _deleteAction);
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final accessToken = await authProvider.getValidAccessToken();
+      if (accessToken == null) {
+        await authProvider.logout();
+        return;
+      }
+
+      final result =
+          await UserService().deleteAccount(accessToken: accessToken);
+
+      if (!context.mounted) return;
+
+      if (result['success'] == true) {
+        await authProvider.logout();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['error'] ?? l.settingsDeleteAccountFailed),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _activeDestructiveAction = null);
+    }
+  }
+
+  Future<void> _handleLogout(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        final l = AppLocalizations.of(context);
+        return AlertDialog(
+        title: Text(l.settingsSignOutTitle),
+        content: Text(l.settingsSignOutContent),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l.commonCancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l.settingsSignOut),
+          ),
+        ],
+      );},
+    );
+
+    if (confirmed == true && context.mounted) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.logout();
+    }
   }
 
   Future<void> _showCustomHeadersDialog() async {
+    final l = AppLocalizations.of(context);
     final formKey = GlobalKey<FormState>();
-    final latestHeaders = await CustomProxyHeadersService.instance.loadHeaders(backendUrl: ApiConfig.baseUrl);
+    final latestHeaders =
+        await CustomProxyHeadersService.instance.loadHeaders(backendUrl: ApiConfig.baseUrl);
     if (!mounted) return;
 
     setState(() => _customHeaders = latestHeaders);
@@ -156,44 +463,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     final saved = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Custom proxy headers'),
-        content: SingleChildScrollView(
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                CustomProxyHeadersEditor(
-                  initialHeaders: draftHeaders,
-                  onChanged: (headers) => draftHeaders = headers,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Headers are sent with API requests. External SSO pages may not receive them.',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                ),
-              ],
+      builder: (context) {
+        final l = AppLocalizations.of(context);
+        return AlertDialog(
+          title: Text(l.settingsProxyHeadersLabel),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  CustomProxyHeadersEditor(
+                    initialHeaders: draftHeaders,
+                    onChanged: (headers) => draftHeaders = headers,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    l.settingsProxyHeadersNote,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (formKey.currentState?.validate() != true) return;
-              Navigator.pop(context, true);
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(l.commonCancel),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (formKey.currentState?.validate() != true) return;
+                Navigator.pop(context, true);
+              },
+              child: Text(l.commonSave),
+            ),
+          ],
+        );
+      },
     );
 
     if (saved != true) return;
@@ -204,171 +514,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (!mounted) return;
       setState(() => _customHeaders = draftHeaders);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Custom proxy headers saved')),
+        SnackBar(content: Text(l.settingsProxyHeadersSaved)),
       );
     } catch (e) {
       if (!mounted) return;
+      LogService.instance.warning(
+        'Settings',
+        'Failed to save custom proxy headers with ${e.runtimeType}',
+      );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to save custom proxy headers: $e'),
+          content: Text(l.settingsProxyHeadersSaveFailed),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
-    }
-  }
-
-  Future<void> _handleClearLocalData(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Clear Local Data'),
-        content: const Text(
-          'This will delete all locally cached transactions and accounts. '
-          'Your data on the server will not be affected. '
-          'Are you sure you want to continue?'
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('Clear Data'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true && context.mounted) {
-      try {
-        final offlineStorage = OfflineStorageService();
-        final log = LogService.instance;
-
-        log.info('Settings', 'Clearing all local data...');
-        await offlineStorage.clearAllData();
-        if (context.mounted) {
-          Provider.of<CategoriesProvider>(context, listen: false).clear();
-        }
-        log.info('Settings', 'Local data cleared successfully');
-
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Local data cleared successfully. Pull to refresh to sync from server.'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 3),
-            ),
-          );
-        }
-      } catch (e) {
-        final log = LogService.instance;
-        log.error('Settings', 'Failed to clear local data: $e');
-
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to clear local data: $e'),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 3),
-            ),
-          );
-        }
-      }
-    }
-  }
-
-  Future<void> _launchContactUrl(BuildContext context) async {
-    final uri = Uri.parse('https://chat.whatsapp.com/IVBXS2QtJpqIFlZYoSPD1t');
-    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!launched && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to open link')),
-      );
-    }
-  }
-
-  Future<void> _handleDeleteAccount(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Account'),
-        content: const Text(
-          'Deleting your account will permanently remove all your data '
-          'and cannot be undone.\n\n'
-          'Are you sure you want to delete your account?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('Delete Account'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true || !context.mounted) return;
-
-    setState(() => _isDeletingAccount = true);
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final accessToken = await authProvider.getValidAccessToken();
-      if (accessToken == null) {
-        await authProvider.logout();
-        return;
-      }
-
-      final result = await UserService().deleteAccount(accessToken: accessToken);
-
-      if (!context.mounted) return;
-
-      if (result['success'] == true) {
-        await authProvider.logout();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['error'] ?? 'Failed to delete account'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isDeletingAccount = false);
-    }
-  }
-
-  Future<void> _handleLogout(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sign Out'),
-        content: const Text('Are you sure you want to sign out?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Sign Out'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true && context.mounted) {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      await authProvider.logout();
     }
   }
 
@@ -376,10 +535,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final authProvider = Provider.of<AuthProvider>(context);
-    final bg = Theme.of(context).brightness == Brightness.light ? Colors.white : Colors.black;
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
-      backgroundColor: bg,
       body: ListView(
         children: [
           // User info section
@@ -393,18 +551,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     Row(
                       children: [
-                        GestureDetector(
-                          onTap: _onAvatarTap,
-                          child: CircleAvatar(
-                            radius: 30,
-                            backgroundColor: colorScheme.primary,
-                            child: Text(
-                              authProvider.user?.displayName[0].toUpperCase() ?? 'U',
-                              style: TextStyle(
-                                fontSize: 24,
-                                color: colorScheme.onPrimary,
-                                fontWeight: FontWeight.bold,
-                              ),
+                        CircleAvatar(
+                          radius: 30,
+                          backgroundColor: colorScheme.primary,
+                          child: Text(
+                            _displayInitial(authProvider.user?.displayName),
+                            style: TextStyle(
+                              fontSize: 24,
+                              color: colorScheme.onPrimary,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
@@ -414,10 +569,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                authProvider.user?.displayName ?? 'User',
-                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                authProvider.user?.displayName ?? l.settingsUserFallback,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleLarge
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
                               ),
                               const SizedBox(height: 4),
                               Text(
@@ -437,66 +595,72 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
+          // App version
+          ListTile(
+            leading: const Icon(Icons.info_outline),
+            title: Text(l.settingsAppVersion(_appVersion ?? '…')),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(' > ui_layout: ${authProvider.user?.uiLayout}'),
+                Text(' > ai_enabled: ${authProvider.user?.aiEnabled}'),
+              ],
+            ),
+          ),
+
+          ListTile(
+            leading: const Icon(Icons.system_update_outlined),
+            title: Text(l.settingsCheckForUpdates),
+            subtitle: Text(l.settingsCheckForUpdatesSubtitle),
+            trailing: _isCheckingForUpdate
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.chevron_right),
+            onTap: _isCheckingForUpdate ? null : _checkForUpdate,
+          ),
+
           ListTile(
             leading: const Icon(Icons.chat_bubble_outline),
-            title: const Text('Contact us'),
+            title: Text(l.settingsContactUs),
             subtitle: Text(
-              'WhatsApp',
+              'https://discord.com/invite/36ZGBsxYEK',
               style: TextStyle(
                 color: Theme.of(context).colorScheme.primary,
+                decoration: TextDecoration.underline,
               ),
             ),
             onTap: () => _launchContactUrl(context),
           ),
 
-          ListTile(
-            leading: const Icon(Icons.info_outline),
-            title: const Text('About'),
-            subtitle: Text(_appVersion ?? '…'),
-            onTap: () => showAboutDialog(
-              context: context,
-              applicationName: 'Chancen',
-              applicationVersion: _appVersion ?? '…',
-              applicationLegalese: '© ${DateTime.now().year} Chancen International',
+          Semantics(
+            label: l.settingsDebugLogsSemantics,
+            button: true,
+            child: ListTile(
+              leading: const Icon(Icons.bug_report),
+              title: Text(l.settingsDebugLogs),
+              subtitle: Text(l.settingsDebugLogsSubtitle),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const LogViewerScreen()),
+                );
+              },
             ),
           ),
-
-          if (_devMode) ...[
-            ListTile(
-              leading: const Icon(Icons.info_outline),
-              title: Text('App Version: ${_appVersion ?? '…'}'),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(' > ui_layout: ${authProvider.user?.uiLayout}'),
-                  Text(' > ai_enabled: ${authProvider.user?.aiEnabled}'),
-                ],
-              ),
-            ),
-            Semantics(
-              label: 'Open debug logs',
-              button: true,
-              child: ListTile(
-                leading: const Icon(Icons.bug_report),
-                title: const Text('Debug Logs'),
-                subtitle: const Text('View app diagnostic logs'),
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LogViewerScreen()),
-                ),
-              ),
-            ),
-          ],
 
           const Divider(),
 
           // Display Settings Section
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Text(
-              'Display',
-              style: TextStyle(
+              l.settingsSectionDisplay,
+              style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
                 color: Colors.grey,
@@ -504,130 +668,84 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
-          if (_devMode)
-            SwitchListTile(
-              secondary: const Icon(Icons.view_list),
-              title: const Text('Group by Account Type'),
-              subtitle: const Text('Group accounts by type (Crypto, Bank, etc.)'),
-              value: _groupByType,
-              onChanged: (value) async {
-                await PreferencesService.instance.setGroupByType(value);
-                setState(() => _groupByType = value);
-              },
-            ),
+          SwitchListTile(
+            secondary: const Icon(Icons.view_list),
+            title: Text(l.settingsGroupByAccountType),
+            subtitle: Text(l.settingsGroupByAccountTypeSubtitle),
+            value: _groupByType,
+            onChanged: (value) async {
+              await PreferencesService.instance.setGroupByType(value);
+              setState(() {
+                _groupByType = value;
+              });
+            },
+          ),
 
           Consumer<ThemeProvider>(
             builder: (context, themeProvider, _) {
-              final current = themeProvider.themeMode;
-              final (currentIcon, currentLabel) = switch (current) {
-                ThemeMode.light  => (Icons.light_mode, 'Light'),
-                ThemeMode.dark   => (Icons.dark_mode, 'Dark'),
-                _                => (Icons.brightness_auto, 'System'),
-              };
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.brightness_6_outlined),
-                    title: const Text('Theme'),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(currentIcon, size: 18,
-                            color: Theme.of(context).colorScheme.primary),
-                        const SizedBox(width: 6),
-                        Text(currentLabel,
-                            style: TextStyle(
-                                color: Theme.of(context).colorScheme.primary)),
-                        const SizedBox(width: 4),
-                        Icon(
-                          _themeExpanded
-                              ? Icons.expand_less
-                              : Icons.expand_more,
-                          size: 18,
-                        ),
-                      ],
+              return ListTile(
+                leading: const Icon(Icons.brightness_6_outlined),
+                title: Text(l.settingsThemeLabel),
+                trailing: SegmentedButton<ThemeMode>(
+                  segments: [
+                    ButtonSegment(
+                      value: ThemeMode.light,
+                      icon: const Icon(Icons.light_mode, size: 18),
+                      tooltip: l.settingsThemeLight,
                     ),
-                    onTap: () =>
-                        setState(() => _themeExpanded = !_themeExpanded),
-                  ),
-                  AnimatedSize(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeInOut,
-                    child: _themeExpanded
-                        ? Column(
-                            children: [
-                              _ThemeOption(
-                                icon: Icons.light_mode,
-                                label: 'Light',
-                                selected: current == ThemeMode.light,
-                                onTap: () {
-                                  themeProvider.setThemeMode(ThemeMode.light);
-                                  setState(() => _themeExpanded = false);
-                                },
-                              ),
-                              _ThemeOption(
-                                icon: Icons.brightness_auto,
-                                label: 'System',
-                                selected: current == ThemeMode.system,
-                                onTap: () {
-                                  themeProvider.setThemeMode(ThemeMode.system);
-                                  setState(() => _themeExpanded = false);
-                                },
-                              ),
-                              _ThemeOption(
-                                icon: Icons.dark_mode,
-                                label: 'Dark',
-                                selected: current == ThemeMode.dark,
-                                onTap: () {
-                                  themeProvider.setThemeMode(ThemeMode.dark);
-                                  setState(() => _themeExpanded = false);
-                                },
-                              ),
-                            ],
-                          )
-                        : const SizedBox.shrink(),
-                  ),
-                ],
+                    ButtonSegment(
+                      value: ThemeMode.system,
+                      icon: const Icon(Icons.brightness_auto, size: 18),
+                      tooltip: l.settingsThemeSystem,
+                    ),
+                    ButtonSegment(
+                      value: ThemeMode.dark,
+                      icon: const Icon(Icons.dark_mode, size: 18),
+                      tooltip: l.settingsThemeDark,
+                    ),
+                  ],
+                  selected: {themeProvider.themeMode},
+                  onSelectionChanged: (modes) =>
+                      themeProvider.setThemeMode(modes.first),
+                  showSelectedIcon: false,
+                ),
               );
             },
           ),
 
-          if (_devMode) ...[
-            const Divider(),
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Text(
-                'Connection',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey),
+          const Divider(),
+
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Text(
+              l.settingsSectionConnection,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
               ),
             ),
-            ListTile(
-              leading: const Icon(Icons.dns_outlined),
-              title: const Text('Backend server'),
-              subtitle: Text(ApiConfig.baseUrl),
-              onTap: _openBackendSwitcher,
+          ),
+
+          ListTile(
+            leading: const Icon(Icons.http_outlined),
+            title: Text(l.settingsProxyHeadersTileTitle),
+            subtitle: Text(
+              _customHeaders.isEmpty
+                  ? l.settingsProxyHeadersTileSubtitleEmpty
+                  : l.settingsProxyHeadersTileSubtitleCount(_customHeaders.length),
             ),
-            ListTile(
-              leading: const Icon(Icons.http_outlined),
-              title: const Text('Custom proxy headers'),
-              subtitle: Text(
-                _customHeaders.isEmpty
-                    ? 'Optional headers for a reverse proxy or auth gateway'
-                    : '${_customHeaders.length} configured',
-              ),
-              onTap: _showCustomHeadersDialog,
-            ),
-          ],
+            onTap: _showCustomHeadersDialog,
+          ),
 
           const Divider(),
 
           // Data Management Section
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Text(
-              'Data Management',
-              style: TextStyle(
+              l.settingsSectionDataManagement,
+              style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
                 color: Colors.grey,
@@ -638,43 +756,57 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // Clear local data button
           ListTile(
             leading: const Icon(Icons.delete_outline),
-            title: const Text('Clear Local Data'),
-            subtitle: const Text('Remove all cached transactions and accounts'),
-            onTap: () => _handleClearLocalData(context),
+            title: Text(l.settingsClearDataTitle),
+            subtitle: Text(l.settingsClearDataTileSubtitle),
+            trailing: _activeDestructiveAction == _clearAction
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : null,
+            enabled: _activeDestructiveAction == null,
+            onTap: _activeDestructiveAction != null
+                ? null
+                : () => _handleClearLocalData(context),
           ),
 
-          if (_biometricSupported) ...[
-            const Divider(),
-
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Text(
-                'Security',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey,
-                ),
+          const Divider(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Text(
+              l.settingsSectionSecurity,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
               ),
             ),
-
+          ),
+          SwitchListTile(
+            secondary: const Icon(Icons.visibility_off_outlined),
+            title: Text(l.settingsPrivacyHideAmountsLabel),
+            subtitle: Text(l.settingsPrivacyHideAmountsContent),
+            value: context.watch<PrivacyProvider>().hidden,
+            onChanged: (value) =>
+                context.read<PrivacyProvider>().setHidden(value),
+          ),
+          if (_biometricSupported)
             SwitchListTile(
               secondary: const Icon(Icons.fingerprint),
-              title: const Text('Biometric Lock'),
-              subtitle: const Text('Require biometric authentication when resuming the app'),
+              title: Text(l.settingsBiometricLabel),
+              subtitle: Text(l.settingsBiometricEnableContent),
               value: _biometricEnabled,
               onChanged: _isTogglingBiometric ? null : _toggleBiometric,
             ),
-          ],
 
           const Divider(),
 
           // Danger Zone Section
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Text(
-              'Danger Zone',
-              style: TextStyle(
+              l.settingsSectionDangerZone,
+              style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
                 color: Colors.red,
@@ -683,16 +815,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
 
           ListTile(
-            leading: const Icon(Icons.delete_forever, color: Colors.red),
-            title: const Text('Delete Account'),
-            subtitle: const Text(
-              'Permanently remove all your data. This cannot be undone.',
-            ),
-            trailing: _isDeletingAccount
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+            leading: const Icon(Icons.restart_alt, color: Colors.red),
+            title: Text(l.settingsResetAccount),
+            subtitle: Text(l.settingsResetAccountTileSubtitle),
+            trailing: _activeDestructiveAction == _resetAction
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2))
                 : null,
-            enabled: !_isDeletingAccount,
-            onTap: _isDeletingAccount ? null : () => _handleDeleteAccount(context),
+            enabled: _activeDestructiveAction == null,
+            onTap: _activeDestructiveAction != null
+                ? null
+                : () => _handleResetAccount(context),
+          ),
+
+          ListTile(
+            leading: const Icon(Icons.delete_forever, color: Colors.red),
+            title: Text(l.settingsDeleteAccount),
+            subtitle: Text(l.settingsDeleteAccountTileSubtitle),
+            trailing: _activeDestructiveAction == _deleteAction
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : null,
+            enabled: _activeDestructiveAction == null,
+            onTap: _activeDestructiveAction != null
+                ? null
+                : () => _handleDeleteAccount(context),
           ),
 
           const Divider(),
@@ -703,7 +854,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: ElevatedButton.icon(
               onPressed: () => _handleLogout(context),
               icon: const Icon(Icons.logout),
-              label: const Text('Sign Out'),
+              label: Text(l.settingsSignOut),
               style: ElevatedButton.styleFrom(
                 backgroundColor: colorScheme.error,
                 foregroundColor: colorScheme.onError,
@@ -711,50 +862,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ThemeOption extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _ThemeOption({
-    required this.icon,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            const SizedBox(width: 40),
-            Icon(icon, size: 20,
-                color: selected ? colorScheme.primary : colorScheme.onSurfaceVariant),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-                  color: selected ? colorScheme.primary : colorScheme.onSurface,
-                ),
-              ),
-            ),
-            if (selected)
-              Icon(Icons.check, size: 18, color: colorScheme.primary),
-          ],
-        ),
       ),
     );
   }

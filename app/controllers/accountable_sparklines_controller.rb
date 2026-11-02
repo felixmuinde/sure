@@ -16,19 +16,28 @@ class AccountableSparklinesController < ApplicationController
 
   private
     def family
-      Current.family
+      @family ||= Current.family
     end
 
-    def accountable
-      Accountable.from_type(params[:accountable_type]&.classify)
+    # Same accounts the sidebar group total sums: accessible to the current
+    # user, visible, included in reports and counted in their finances (owned,
+    # or shared with include_in_finances).
+    def account_scope
+      @account_scope ||= Current.accessible_accounts
+        .visible
+        .included_in_reports
+        .included_in_finances_for(Current.user)
+        .where(accountable_type: @accountable.name)
     end
 
     def account_ids
-      family.accounts.visible.where(accountable_type: accountable.name).pluck(:id)
+      @account_ids ||= account_identity_rows.map(&:first).uniq
     end
 
-    def accounts
-      @accounts ||= family.accounts.visible.where(accountable_type: accountable.name)
+    def account_identity_rows
+      @account_identity_rows ||= account_scope
+        .left_outer_joins(:account_providers)
+        .pluck(:id, :plaid_account_id, :simplefin_account_id, Arel.sql("account_providers.id"))
     end
 
     def build_series
@@ -50,12 +59,14 @@ class AccountableSparklinesController < ApplicationController
     def requires_normalized_aggregation?
       return false unless %w[Investment Crypto].include?(@accountable.name)
 
-      accounts.linked.exists?
+      account_identity_rows.any? do |_account_id, plaid_account_id, simplefin_account_id, account_provider_id|
+        plaid_account_id.present? || simplefin_account_id.present? || account_provider_id.present?
+      end
     end
 
     def aggregate_normalized_series
-      Balance::LinkedInvestmentSeriesNormalizer.aggregate_accounts(
-        accounts: accounts,
+      Balance::LinkedInvestmentSeriesNormalizer.aggregate_account_ids(
+        account_ids: account_ids,
         currency: family.currency,
         period: Period.last_30_days,
         favorable_direction: @accountable.favorable_direction,
@@ -63,7 +74,19 @@ class AccountableSparklinesController < ApplicationController
       )
     end
 
+    # The series is built from exactly these account rows, so the key carries a
+    # digest of them. A share count/timestamp version can stay the same while
+    # the counted set changes (ownership moved by update_all, shares replaced
+    # with older timestamps, report exclusion toggled); the row digest changes
+    # whenever the set does and never repeats for a different set.
     def cache_key
-      family.build_cache_key("#{@accountable.name}_sparkline_#{Account::Chartable::SPARKLINE_CACHE_VERSION}", invalidate_on_data_updates: true)
+      family.build_cache_key(
+        "#{@accountable.name}_sparkline_#{Account::Chartable::SPARKLINE_CACHE_VERSION}_#{account_rows_digest}",
+        invalidate_on_data_updates: true
+      )
+    end
+
+    def account_rows_digest
+      Digest::SHA256.hexdigest(account_identity_rows.map { |row| row.join(":") }.sort.join(","))
     end
 end

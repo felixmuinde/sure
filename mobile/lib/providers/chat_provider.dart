@@ -3,9 +3,19 @@ import 'package:flutter/foundation.dart';
 import '../models/chat.dart';
 import '../models/message.dart';
 import '../services/chat_service.dart';
+import '../services/log_service.dart';
 
 class ChatProvider with ChangeNotifier {
-  final ChatService _chatService = ChatService();
+  ChatProvider({ChatService? chatService})
+      : _chatService = chatService ?? ChatService(),
+        _ownsChatService = chatService == null;
+
+  final ChatService _chatService;
+
+  /// Whether this provider created [_chatService] itself. An injected service
+  /// is owned by the caller and must not be closed on dispose.
+  final bool _ownsChatService;
+  final LogService _log = LogService.instance;
 
   List<Chat> _chats = [];
   Chat? _currentChat;
@@ -40,6 +50,12 @@ class ChatProvider with ChangeNotifier {
   bool get aiConsentRequired => _aiConsentRequired;
   bool get aiUnavailable => _aiUnavailable;
 
+  /// True when the current chat could not load all of its message pages, so the
+  /// rendered history is a partial, older slice. The UI can surface a
+  /// "load more"/retry affordance without treating it as a hard error.
+  bool _hasIncompleteHistory = false;
+  bool get hasIncompleteHistory => _hasIncompleteHistory;
+
   /// Fetch list of chats
   Future<void> fetchChats({
     required String accessToken,
@@ -72,7 +88,7 @@ class ChatProvider with ChangeNotifier {
         _errorMessage = result['error'] ?? 'Failed to fetch chats';
       }
     } catch (e) {
-      debugPrint('fetchChats error: $e');
+      _log.warning('ChatProvider', 'fetchChats failed: ${e.runtimeType}');
       _errorMessage = 'Something went wrong. Please try again.';
     } finally {
       _isLoading = false;
@@ -138,7 +154,13 @@ class ChatProvider with ChangeNotifier {
       );
 
       if (result['success'] == true) {
-        _currentChat = result['chat'] as Chat;
+        final loaded = await _loadRemainingPages(
+          accessToken: accessToken,
+          chatId: chatId,
+          firstPage: result,
+        );
+        _currentChat = loaded.chat;
+        _hasIncompleteHistory = !loaded.complete;
         _errorMessage = null;
 
         // If the last message is from the user, the AI response is still pending
@@ -152,12 +174,69 @@ class ChatProvider with ChangeNotifier {
         _errorMessage = result['error'] ?? 'Failed to fetch chat';
       }
     } catch (e) {
-      debugPrint('fetchChat error: $e');
+      _log.warning('ChatProvider', 'fetchChat failed: ${e.runtimeType}');
       _errorMessage = 'Something went wrong. Please try again.';
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  /// Fetches every remaining page of a chat's messages and merges them into a
+  /// single Chat. The API orders messages oldest-first and paginates them, so
+  /// [firstPage] only holds the oldest slice — without this, newer messages are
+  /// silently dropped once a conversation exceeds one page.
+  ///
+  /// Pages are appended in ascending order to preserve chronology, and messages
+  /// are de-duped by id so an overlapping or locally-injected message can't
+  /// render twice.
+  ///
+  /// Returns the merged chat along with [complete], which is false when one or
+  /// more later pages failed to load so callers can flag a partial history.
+  Future<({Chat chat, bool complete})> _loadRemainingPages({
+    required String accessToken,
+    required String chatId,
+    required Map<String, dynamic> firstPage,
+  }) async {
+    final chat = firstPage['chat'] as Chat;
+    final pagination = firstPage['pagination'] as Map<String, dynamic>?;
+    final totalPages = (pagination?['total_pages'] as int?) ?? 1;
+
+    if (totalPages <= 1) return (chat: chat, complete: true);
+
+    final allMessages = <Message>[...chat.messages];
+    var complete = true;
+
+    for (var page = 2; page <= totalPages; page++) {
+      final pageResult = await _chatService.getChat(
+        accessToken: accessToken,
+        chatId: chatId,
+        page: page,
+      );
+
+      if (pageResult['success'] == true) {
+        allMessages.addAll((pageResult['chat'] as Chat).messages);
+      } else {
+        // Partial failure: keep the pages we have rather than losing the chat
+        // entirely. The user sees a truncated-but-chronological history, and
+        // [complete] lets callers surface that it's incomplete.
+        _log.warning('ChatProvider', 'fetchChat page $page failed; stopping');
+        complete = false;
+        break;
+      }
+    }
+
+    return (chat: chat.copyWith(messages: _dedupeById(allMessages)), complete: complete);
+  }
+
+  /// Returns the messages with duplicate ids removed, preserving first-seen order.
+  List<Message> _dedupeById(List<Message> messages) {
+    final seen = <String>{};
+    final deduped = <Message>[];
+    for (final message in messages) {
+      if (seen.add(message.id)) deduped.add(message);
+    }
+    return deduped;
   }
 
   /// Create a new chat
@@ -211,7 +290,7 @@ class ChatProvider with ChangeNotifier {
         return null;
       }
     } catch (e) {
-      debugPrint('createChat error: $e');
+      _log.warning('ChatProvider', 'createChat failed: ${e.runtimeType}');
       _errorMessage = 'Something went wrong. Please try again.';
       _isLoading = false;
       notifyListeners();
@@ -222,9 +301,8 @@ class ChatProvider with ChangeNotifier {
   void _rollbackOptimisticMessage(String optimisticId, String chatId) {
     if (_currentChat != null && _currentChat!.id == chatId) {
       _currentChat = _currentChat!.copyWith(
-        messages: _currentChat!.messages
-            .where((m) => m.id != optimisticId)
-            .toList(),
+        messages:
+            _currentChat!.messages.where((m) => m.id != optimisticId).toList(),
       );
     }
     _isWaitingForResponse = false;
@@ -294,7 +372,7 @@ class ChatProvider with ChangeNotifier {
     } catch (e) {
       // Roll back the optimistic message on error.
       _rollbackOptimisticMessage(optimisticId, chatId);
-      debugPrint('sendMessage error: $e');
+      _log.warning('ChatProvider', 'sendMessage failed: ${e.runtimeType}');
       _errorMessage = 'Something went wrong. Please try again.';
       return false;
     } finally {
@@ -340,7 +418,7 @@ class ChatProvider with ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      debugPrint('updateChatTitle error: $e');
+      _log.warning('ChatProvider', 'updateChatTitle failed: ${e.runtimeType}');
       _errorMessage = 'Something went wrong. Please try again.';
       notifyListeners();
     }
@@ -372,7 +450,7 @@ class ChatProvider with ChangeNotifier {
         return false;
       }
     } catch (e) {
-      debugPrint('deleteChat error: $e');
+      _log.warning('ChatProvider', 'deleteChat failed: ${e.runtimeType}');
       _errorMessage = 'Something went wrong. Please try again.';
       notifyListeners();
       return false;
@@ -392,7 +470,8 @@ class ChatProvider with ChangeNotifier {
 
       final deletedCount = (result['deletedCount'] as int?) ?? 0;
       if (result['success'] == true || deletedCount > 0) {
-        final failedIds = ((result['failedIds'] as List?) ?? []).cast<String>().toSet();
+        final failedIds =
+            ((result['failedIds'] as List?) ?? []).cast<String>().toSet();
         final deleted = chatIds.toSet().difference(failedIds);
         _chats.removeWhere((c) => deleted.contains(c.id));
 
@@ -408,7 +487,10 @@ class ChatProvider with ChangeNotifier {
       notifyListeners();
       return false;
     } catch (e) {
-      debugPrint('deleteMultipleChats error: $e');
+      _log.warning(
+        'ChatProvider',
+        'deleteMultipleChats failed: ${e.runtimeType}',
+      );
       _errorMessage = 'Something went wrong. Please try again.';
       notifyListeners();
       return false;
@@ -455,7 +537,17 @@ class ChatProvider with ChangeNotifier {
       );
 
       if (result['success'] == true) {
-        final updatedChat = result['chat'] as Chat;
+        // Load every page before comparing. A long chat spans multiple server
+        // pages, and the newest assistant reply lands on the last page — so a
+        // page-1-only poll would never see it and its count/stability checks
+        // would compare against a stale slice of the full history.
+        final loaded = await _loadRemainingPages(
+          accessToken: accessToken,
+          chatId: chatId,
+          firstPage: result,
+        );
+        final updatedChat = loaded.chat;
+        _hasIncompleteHistory = !loaded.complete;
 
         if (_currentChat == null || _currentChat!.id != chatId) return;
 
@@ -535,14 +627,15 @@ class ChatProvider with ChangeNotifier {
     } catch (e) {
       // Network error — allow polling to continue; timeout check below will
       // stop it if the deadline has passed.
-      debugPrint('Polling error: ${e.toString()}');
+      _log.warning('ChatProvider', 'Polling failed: ${e.runtimeType}');
     }
 
     // Evaluate timeout only after the attempt, and only when no progress was made.
     if (_pollingStartTime != null &&
         DateTime.now().difference(_pollingStartTime!) >= _pollingTimeout) {
       _stopPolling();
-      _errorMessage = 'The assistant took too long to respond. Please try again.';
+      _errorMessage =
+          'The assistant took too long to respond. Please try again.';
       notifyListeners();
     }
   }
@@ -565,6 +658,7 @@ class ChatProvider with ChangeNotifier {
   @override
   void dispose() {
     _stopPolling();
+    if (_ownsChatService) _chatService.close();
     super.dispose();
   }
 }

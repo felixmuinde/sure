@@ -1,8 +1,6 @@
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../models/chat.dart';
 import '../providers/auth_provider.dart';
@@ -10,7 +8,7 @@ import '../providers/chat_provider.dart';
 import '../models/message.dart';
 import '../constants/suggested_questions.dart';
 import '../widgets/typing_indicator.dart';
-import '../widgets/ai_disabled_empty_state.dart';
+import '../l10n/app_localizations.dart';
 
 class _SendMessageIntent extends Intent {
   const _SendMessageIntent();
@@ -138,69 +136,68 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     if (content.isEmpty) return;
     setState(() => _isSendInFlight = true);
 
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+    final l = AppLocalizations.of(context);
 
-      final accessToken = await authProvider.getValidAccessToken();
-      if (accessToken == null) {
-        await authProvider.logout();
+    try {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+
+    final accessToken = await authProvider.getValidAccessToken();
+    if (accessToken == null) {
+      await authProvider.logout();
+      return;
+    }
+
+    _messageController.clear();
+
+    if (_chatId == null) {
+      // First message in a new chat — create the chat with it.
+      final chat = await chatProvider.createChat(
+        accessToken: accessToken,
+        title: Chat.generateTitle(content),
+        initialMessage: content,
+      );
+      if (!mounted) return;
+      if (chat == null) {
+        // Restore the message so the user doesn't lose it.
+        _messageController.text = content;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(chatProvider.errorMessage ?? l.chatConversationStartFailed),
+            backgroundColor: Colors.red,
+          ),
+        );
         return;
       }
+      setState(() => _chatId = chat.id);
+    } else {
+      final shouldUpdateTitle =
+          chatProvider.currentChat?.hasDefaultTitle == true;
 
-      _messageController.clear();
+      final delivered = await chatProvider.sendMessage(
+        accessToken: accessToken,
+        chatId: _chatId!,
+        content: content,
+      );
 
-      if (_chatId == null) {
-        // First message in a new chat — create the chat with it.
-        final chat = await chatProvider.createChat(
-          accessToken: accessToken,
-          title: Chat.generateTitle(content),
-          initialMessage: content,
-        );
-        if (!mounted) return;
-        if (chat == null) {
-          // Restore the message so the user doesn't lose it.
-          _messageController.text = content;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                chatProvider.errorMessage ??
-                    'Failed to start conversation. Please try again.',
-              ),
-              backgroundColor: Colors.red,
-            ),
-          );
-          return;
-        }
-        setState(() => _chatId = chat.id);
-      } else {
-        final shouldUpdateTitle =
-            chatProvider.currentChat?.hasDefaultTitle == true;
-
-        final delivered = await chatProvider.sendMessage(
+      if (delivered && shouldUpdateTitle) {
+        await chatProvider.updateChatTitle(
           accessToken: accessToken,
           chatId: _chatId!,
-          content: content,
+          title: Chat.generateTitle(content),
         );
-
-        if (delivered && shouldUpdateTitle) {
-          await chatProvider.updateChatTitle(
-            accessToken: accessToken,
-            chatId: _chatId!,
-            title: Chat.generateTitle(content),
-          );
-        }
       }
+    }
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_scrollController.hasClients) {
-          _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOut,
-          );
-        }
-      });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
     } finally {
       if (mounted) setState(() => _isSendInFlight = false);
     }
@@ -213,25 +210,26 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     final newTitle = await showDialog<String>(
       context: context,
       builder: (context) {
+        final dl = AppLocalizations.of(context);
         final controller = TextEditingController(text: currentTitle);
         return AlertDialog(
-          title: const Text('Edit Title'),
+          title: Text(dl.chatConversationEditTitle),
           content: TextField(
             controller: controller,
-            decoration: const InputDecoration(
-              labelText: 'Chat Title',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: dl.chatConversationTitleLabel,
+              border: const OutlineInputBorder(),
             ),
             autofocus: true,
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: Text(dl.commonCancel),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, controller.text.trim()),
-              child: const Text('Save'),
+              child: Text(dl.commonSave),
             ),
           ],
         );
@@ -256,24 +254,22 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   }
 
   String _formatTime(DateTime dateTime) {
-    final hour = dateTime.hour.toString().padLeft(2, '0');
-    final minute = dateTime.minute.toString().padLeft(2, '0');
+    final local = dateTime.toLocal();
+    final hour = local.hour.toString().padLeft(2, '0');
+    final minute = local.minute.toString().padLeft(2, '0');
     return '$hour:$minute';
   }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final bg = Theme.of(context).brightness == Brightness.light ? Colors.white : Colors.black;
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
-      backgroundColor: bg,
       appBar: AppBar(
-        backgroundColor: bg,
-        scrolledUnderElevation: 0,
         title: Consumer<ChatProvider>(
           builder: (context, chatProvider, _) {
-            final title = chatProvider.currentChat?.title ?? 'New Conversation';
+            final title = chatProvider.currentChat?.title ?? AppLocalizations.of(context).chatConversationNewTitle;
             return GestureDetector(
               onTap: _chatId != null ? _editTitle : null,
               child: Row(
@@ -299,21 +295,12 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: () => _loadChat(forceRefresh: true),
-              tooltip: 'Refresh',
+              tooltip: l.chatConversationRefreshTooltip,
             ),
         ],
       ),
-      body: Consumer2<AuthProvider, ChatProvider>(
-        builder: (context, authProvider, chatProvider, _) {
-          if (chatProvider.aiUnavailable) {
-            return AiDisabledEmptyState(
-              action: OutlinedButton.icon(
-                onPressed: () => Navigator.maybePop(context),
-                icon: const Icon(Icons.arrow_back),
-                label: const Text('Go Back'),
-              ),
-            );
-          }
+      body: Consumer<ChatProvider>(
+        builder: (context, chatProvider, _) {
           if (chatProvider.isLoading && chatProvider.currentChat == null) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -330,7 +317,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                     Icon(Icons.error_outline,
                         size: 64, color: colorScheme.error),
                     const SizedBox(height: 16),
-                    Text('Failed to load chat',
+                    Text(l.chatConversationLoadError,
                         style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: 8),
                     Text(
@@ -342,7 +329,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                     ElevatedButton.icon(
                       onPressed: _loadChat,
                       icon: const Icon(Icons.refresh),
-                      label: const Text('Try Again'),
+                      label: Text(l.commonTryAgain),
                     ),
                   ],
                 ),
@@ -359,7 +346,8 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   return !(m.isAssistant && m == allMessages.lastOrNull);
                 }).toList()
               : allMessages;
-          final firstName = authProvider.user?.firstName;
+          final firstName =
+              Provider.of<AuthProvider>(context, listen: true).user?.firstName;
 
           return Column(
             children: [
@@ -391,77 +379,70 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               ),
 
               // Message input
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: bg,
+              Container(
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  16,
+                  16,
+                  16 + MediaQuery.paddingOf(context).bottom,
+                ),
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, -2),
                     ),
-                    child: Shortcuts(
-                      shortcuts: const {
-                        SingleActivator(LogicalKeyboardKey.enter):
-                            _SendMessageIntent(),
-                      },
-                      child: Actions(
-                        actions: <Type, Action<Intent>>{
-                          _SendMessageIntent:
-                              CallbackAction<_SendMessageIntent>(
-                            onInvoke: (_) {
-                              if (!_isSendInFlight && !chatProvider.isSendingMessage && !chatProvider.isWaitingForResponse && !chatProvider.isPolling) _sendMessage();
-                              return null;
-                            },
-                          ),
+                  ],
+                ),
+                child: Shortcuts(
+                  shortcuts: const {
+                    SingleActivator(LogicalKeyboardKey.enter):
+                        _SendMessageIntent(),
+                  },
+                  child: Actions(
+                    actions: <Type, Action<Intent>>{
+                      _SendMessageIntent: CallbackAction<_SendMessageIntent>(
+                        onInvoke: (_) {
+                          if (!_isSendInFlight && !chatProvider.isSendingMessage && !chatProvider.isWaitingForResponse && !chatProvider.isPolling) _sendMessage();
+                          return null;
                         },
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _messageController,
-                                decoration: InputDecoration(
-                                  hintText: 'Type a message...',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(24),
-                                  ),
-                                  contentPadding:
-                                      const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 12,
-                                  ),
-                                ),
-                                maxLines: null,
-                                textCapitalization:
-                                    TextCapitalization.sentences,
-                                autofocus: _chatId == null,
+                      ),
+                    },
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _messageController,
+                            decoration: InputDecoration(
+                              hintText: l.chatConversationMessageHint,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            IconButton(
-                              icon: const Icon(Icons.send),
-                              onPressed: (_isSendInFlight || chatProvider.isSendingMessage || chatProvider.isWaitingForResponse || chatProvider.isPolling)
-                                  ? null
-                                  : _sendMessage,
-                              color: colorScheme.primary,
-                              iconSize: 28,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(
-                        left: 16, right: 16, bottom: 8),
-                    child: Text(
-                      'AI can make mistakes. I am here to educate and help you learn. Always double-check important information.',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
+                            maxLines: null,
+                            textCapitalization: TextCapitalization.sentences,
+                            autofocus: _chatId == null,
                           ),
-                      textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.send),
+                          onPressed: (_isSendInFlight || chatProvider.isSendingMessage || chatProvider.isWaitingForResponse || chatProvider.isPolling)
+                              ? null
+                              : _sendMessage,
+                          color: colorScheme.primary,
+                          iconSize: 28,
+                        ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
             ],
           );
@@ -509,10 +490,14 @@ class _MessageBubble extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isUser)
-            SvgPicture.asset(
-              'assets/images/companion-logo.svg',
-              width: 32,
-              height: 32,
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: colorScheme.primaryContainer,
+              child: Icon(
+                Icons.smart_toy,
+                size: 18,
+                color: colorScheme.onPrimaryContainer,
+              ),
             ),
           const SizedBox(width: 8),
           Flexible(
@@ -554,8 +539,7 @@ class _MessageBubble extends StatelessWidget {
                             return Image.asset(config.uri.toString());
                           },
                         ),
-                      if (kDebugMode &&
-                          message.toolCalls != null &&
+                      if (message.toolCalls != null &&
                           message.toolCalls!.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.only(top: 8),
@@ -620,8 +604,9 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
     final name = (firstName ?? '').trim();
-    final greeting = name.isNotEmpty ? 'Hi $name, how can I help?' : 'How can I help?';
+    final greeting = name.isNotEmpty ? l.chatConversationGreetingWithName(name) : l.chatConversationGreetingNoName;
 
     return ListView(
       padding: const EdgeInsets.all(24),
@@ -635,7 +620,7 @@ class _EmptyState extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 32),
-        ...suggestedQuestions.map(
+        ...suggestedQuestions(context).map(
           (q) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: OutlinedButton.icon(
@@ -671,10 +656,14 @@ class _TypingIndicatorBubble extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SvgPicture.asset(
-            'assets/images/companion-logo.svg',
-            width: 32,
-            height: 32,
+          CircleAvatar(
+            radius: 16,
+            backgroundColor: colorScheme.primaryContainer,
+            child: Icon(
+              Icons.smart_toy,
+              size: 18,
+              color: colorScheme.onPrimaryContainer,
+            ),
           ),
           const SizedBox(width: 8),
           Container(

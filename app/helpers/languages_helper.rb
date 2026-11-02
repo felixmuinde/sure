@@ -49,6 +49,7 @@ module LanguagesHelper
     nl: "Dutch",
     'no-NO': "Norwegian (Norway)",
     pl: "Polish",
+    'pt-PT': "Portuguese (Portugal)",
     'pt-BR': "Portuguese (Brazil)",
     pt: "Portuguese",
     sk: "Slovak",
@@ -159,16 +160,21 @@ module LanguagesHelper
     "fr",   # French
     "de",   # German
     "es",   # Spanish
+    "it",   # Italian
     "tr",   # Turkish
     "nb",   # Norwegian Bokmål
     "ca",   # Catalan
     "ro",   # Romanian
+    "ru",   # Russian
     "pl",   # Polish
+    "pt-PT", # Portuguese (Portugal)
     "pt-BR", # Brazilian Portuguese
     "zh-CN", # Chinese (Simplified)
     "zh-TW",  # Chinese (Traditional)
     "nl",   # Dutch
-    "hu"   # Hungarian
+    "hu",   # Hungarian
+    "vi",   # Vietnamese
+    "uk"    # Ukrainian
   ].freeze
 
   COUNTRY_MAPPING = {
@@ -371,7 +377,12 @@ module LanguagesHelper
   }.freeze
 
   def country_options
-    COUNTRY_MAPPING.keys.map { |key| [ COUNTRY_MAPPING[key], key ] }
+    COUNTRY_MAPPING.keys.map do |key|
+      english = COUNTRY_MAPPING[key]
+      emoji, name = english.split(" ", 2)
+      label = I18n.t("countries.#{key}", default: name)
+      [ "#{emoji} #{label}", key.to_s ]
+    end
   end
 
   def language_options
