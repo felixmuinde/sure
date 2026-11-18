@@ -32,5 +32,49 @@ void main() {
       expect(txn.currency, '');
       expect(txn.paymentDate, '');
     });
+
+    test('classifies the known balance-reducing payment types', () {
+      for (final type in [
+        'CoBooth Monthly Flat Payment',
+        'CoBooth Payment',
+        'Commitment Payment',
+        'Contribution Fee',
+        'Drop-out Fee',
+        'Repayment',
+        'Write-Off Collection Payment',
+      ]) {
+        final txn = IsaTransaction.fromJson({'payment_type': type});
+
+        expect(txn.category, IsaPaymentCategory.balanceReduction);
+      }
+    });
+
+    test('classifies PEI payments as Chancen funding', () {
+      final txn = IsaTransaction.fromJson({'payment_type': 'PEI Payment'});
+
+      expect(txn.category, IsaPaymentCategory.chancenFunding);
+    });
+
+    test('classifies fees that do not affect principal', () {
+      for (final type in ['Admin fee', 'Application Fees', 'Deposit']) {
+        final txn = IsaTransaction.fromJson({'payment_type': type});
+
+        expect(txn.category, IsaPaymentCategory.fees);
+      }
+    });
+
+    test('classifies penalties separately', () {
+      for (final type in ['Dropout Penalty', 'Penalty fee']) {
+        final txn = IsaTransaction.fromJson({'payment_type': type});
+
+        expect(txn.category, IsaPaymentCategory.penalties);
+      }
+    });
+
+    test('keeps unknown payment types visible as other', () {
+      final txn = IsaTransaction.fromJson({'payment_type': 'Adjustment'});
+
+      expect(txn.category, IsaPaymentCategory.other);
+    });
   });
 }
