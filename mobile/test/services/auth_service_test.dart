@@ -167,7 +167,7 @@ void main() {
     expect(result, {'success': true});
   });
 
-  test('resetPassword extracts a 422 error response', () async {
+  test('resetPassword returns a generic code for a 422 response', () async {
     final result = await _withRawServer(
       method: 'PATCH',
       statusCode: 422,
@@ -180,10 +180,10 @@ void main() {
     );
 
     expect(result['success'], false);
-    expect(result['error'], 'is too short');
+    expect(result['code'], 'generic');
   });
 
-  test('resetPassword handles a non-JSON error response', () async {
+  test('resetPassword returns a generic code for a non-JSON error response', () async {
     final result = await _withRawServer(
       method: 'PATCH',
       statusCode: 502,
@@ -196,7 +196,7 @@ void main() {
     );
 
     expect(result['success'], false);
-    expect(result['error'], 'Unable to reset password');
+    expect(result['code'], 'generic');
   });
 }
 

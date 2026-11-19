@@ -356,6 +356,18 @@ abstract class AppLocalizations {
   /// **'We couldn\'t reset your password. The link may be invalid or expired.'**
   String get resetPasswordGenericError;
 
+  /// Recoverable connection error when resetting a password.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t reach your server. Check your connection and try again.'**
+  String get resetPasswordNetworkError;
+
+  /// Error when password features are disabled for the account or instance.
+  ///
+  /// In en, this message translates to:
+  /// **'Password reset isn\'t available for this account.'**
+  String get resetPasswordDisabledError;
+
   /// Google SSO button label.
   ///
   /// In en, this message translates to:

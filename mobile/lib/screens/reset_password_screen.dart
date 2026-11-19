@@ -71,9 +71,22 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     setState(() {
       _isLoading = false;
-      _errorMessage = result['error'] as String? ??
-          AppLocalizations.of(context).resetPasswordGenericError;
+      _errorMessage = _localizedResetError(result['code'] as String?);
     });
+  }
+
+  // Map the service's semantic failure category to a localized message, rather
+  // than surfacing the server's English prose (which ignores the app locale).
+  String _localizedResetError(String? code) {
+    final l = AppLocalizations.of(context);
+    switch (code) {
+      case 'disabled':
+        return l.resetPasswordDisabledError;
+      case 'network':
+        return l.resetPasswordNetworkError;
+      default:
+        return l.resetPasswordGenericError;
+    }
   }
 
   @override

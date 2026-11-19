@@ -354,25 +354,24 @@ class AuthService {
         return {'success': true};
       }
 
-      return {
-        'success': false,
-        'error': _responseErrorMessage(
-          _tryDecodeResponse(response.body),
-          'Unable to reset password',
-        ),
-      };
+      // Return a semantic category, not the server's (English) prose, so the
+      // screen can show a message in the app's locale.
+      if (response.statusCode == 403) {
+        return {'success': false, 'code': 'disabled'};
+      }
+      return {'success': false, 'code': 'generic'};
     } on SocketException catch (e) {
       _logAuthException('Password reset', e);
-      return {'success': false, 'error': 'Network unavailable'};
+      return {'success': false, 'code': 'network'};
     } on TimeoutException catch (e) {
       _logAuthException('Password reset', e);
-      return {'success': false, 'error': 'Request timed out'};
+      return {'success': false, 'code': 'network'};
     } on FormatException catch (e) {
       _logAuthException('Password reset', e);
-      return {'success': false, 'error': 'Invalid response from server'};
+      return {'success': false, 'code': 'generic'};
     } catch (e) {
       _logAuthException('Password reset', e);
-      return {'success': false, 'error': 'An unexpected error occurred'};
+      return {'success': false, 'code': 'generic'};
     }
   }
 

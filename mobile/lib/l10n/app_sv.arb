@@ -43,6 +43,8 @@
   "resetPasswordUpdateButton": "Uppdatera lösenord",
   "resetPasswordSuccess": "Lösenordet har uppdaterats. Logga in.",
   "resetPasswordGenericError": "Det gick inte att återställa lösenordet. Länken kan vara ogiltig eller ha gått ut.",
+  "resetPasswordNetworkError": "Vi kunde inte nå din server. Kontrollera din anslutning och försök igen.",
+  "resetPasswordDisabledError": "Lösenordsåterställning är inte tillgänglig för det här kontot.",
   "loginSignInWithGoogle": "Logga in med Google",
   "loginMfaLabel": "Autentiseringskod",
   "loginApiKeyLabel": "API-nyckel",

@@ -130,6 +130,12 @@
   "resetPasswordGenericError": "We couldn't reset your password. The link may be invalid or expired.",
   "@resetPasswordGenericError": { "description": "Fallback error after a password reset fails." },
 
+  "resetPasswordNetworkError": "We couldn't reach your server. Check your connection and try again.",
+  "@resetPasswordNetworkError": { "description": "Recoverable connection error when resetting a password." },
+
+  "resetPasswordDisabledError": "Password reset isn't available for this account.",
+  "@resetPasswordDisabledError": { "description": "Error when password features are disabled for the account or instance." },
+
   "loginSignInWithGoogle": "Sign in with Google",
   "@loginSignInWithGoogle": { "description": "Google SSO button label." },
 

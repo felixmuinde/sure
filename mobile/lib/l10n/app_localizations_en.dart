@@ -148,6 +148,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'We couldn\'t reset your password. The link may be invalid or expired.';
 
   @override
+  String get resetPasswordNetworkError =>
+      'We couldn\'t reach your server. Check your connection and try again.';
+
+  @override
+  String get resetPasswordDisabledError =>
+      'Password reset isn\'t available for this account.';
+
+  @override
   String get loginSignInWithGoogle => 'Sign in with Google';
 
   @override

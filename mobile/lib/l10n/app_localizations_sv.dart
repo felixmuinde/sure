@@ -149,6 +149,14 @@ class AppLocalizationsSv extends AppLocalizations {
       'Det gick inte att återställa lösenordet. Länken kan vara ogiltig eller ha gått ut.';
 
   @override
+  String get resetPasswordNetworkError =>
+      'Vi kunde inte nå din server. Kontrollera din anslutning och försök igen.';
+
+  @override
+  String get resetPasswordDisabledError =>
+      'Lösenordsåterställning är inte tillgänglig för det här kontot.';
+
+  @override
   String get loginSignInWithGoogle => 'Logga in med Google';
 
   @override
