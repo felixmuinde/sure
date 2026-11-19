@@ -65,8 +65,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       // Always clear local credentials, not only when the token still looks
       // valid: a reset arriving by email link may carry an expired token
       // (isAuthenticated == false) whose stored credentials must still be
-      // dropped now that the server has rotated the password. logout() is
-      // best-effort (it only deletes local storage) and never throws here.
+      // dropped now that the server has rotated the password. logout() clears
+      // in-memory state first and is best-effort about storage, so it never
+      // throws or blocks this navigation.
       await authProvider.logout();
       if (!mounted) return;
 
