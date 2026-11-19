@@ -257,12 +257,20 @@ class _AppWrapperState extends State<AppWrapper> with WidgetsBindingObserver {
     final token = uri.queryParameters['token']?.trim();
     if (token == null || token.isEmpty || token == _handledResetToken) return;
 
+    // Dedupe only while this token's screen is open (the initial-link and
+    // stream paths can both deliver it). Clear the marker once the route
+    // closes so backing out without submitting doesn't dead-end a user who
+    // taps the same still-valid link again.
     _handledResetToken = token;
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ResetPasswordScreen(token: token),
-      ),
-    );
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute(
+            builder: (_) => ResetPasswordScreen(token: token),
+          ),
+        )
+        .whenComplete(() {
+          if (_handledResetToken == token) _handledResetToken = null;
+        });
   }
 
   Future<void> _checkBackendConfig() async {
