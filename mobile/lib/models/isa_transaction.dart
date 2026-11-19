@@ -31,6 +31,8 @@ class IsaTransaction {
   static const _paymentCategories = <String, IsaPaymentCategory>{
     'cobooth monthly flat payment': IsaPaymentCategory.balanceReduction,
     'cobooth payment': IsaPaymentCategory.balanceReduction,
+    'commitment fee': IsaPaymentCategory.balanceReduction,
+    'commitment fees': IsaPaymentCategory.balanceReduction,
     'commitment payment': IsaPaymentCategory.balanceReduction,
     'contribution fee': IsaPaymentCategory.balanceReduction,
     'drop out fee': IsaPaymentCategory.balanceReduction,

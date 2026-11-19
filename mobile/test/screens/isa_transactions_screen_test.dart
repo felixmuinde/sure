@@ -36,6 +36,12 @@ void main() {
         paymentDate: '2026-10-03',
       ),
       IsaTransaction(
+        paymentType: 'Commitment Fee',
+        amount: 500,
+        currency: 'KES',
+        paymentDate: '2026-10-02',
+      ),
+      IsaTransaction(
         paymentType: 'PEI Payment',
         amount: 120000,
         currency: 'KES',
@@ -60,7 +66,8 @@ void main() {
     expect(find.text('FEES'), findsOneWidget);
     expect(find.text('PENALTIES'), findsOneWidget);
     expect(find.text('Repayment'), findsOneWidget);
-    expect(find.text('Funding paid by Chancen'), findsOneWidget);
+    expect(find.text('Commitment payment'), findsOneWidget);
+    expect(find.text('Chancen Paid'), findsOneWidget);
     expect(find.text('Application fee'), findsOneWidget);
     expect(find.text('Dropout penalty'), findsOneWidget);
   });

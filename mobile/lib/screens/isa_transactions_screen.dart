@@ -525,6 +525,7 @@ String _paymentTitle(BuildContext context, IsaTransaction transaction) {
     'pei payment' => l.paymentsItemChancenFunding,
     'cobooth monthly flat payment' => l.paymentsItemMonthlyPayment,
     'cobooth payment' => l.paymentsItemBalancePayment,
+    'commitment fee' || 'commitment fees' => l.paymentsItemCommitmentPayment,
     'commitment payment' => l.paymentsItemCommitmentPayment,
     'contribution fee' => l.paymentsItemContributionPayment,
     'drop out fee' => l.paymentsItemDropoutPayment,

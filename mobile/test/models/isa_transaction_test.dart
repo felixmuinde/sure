@@ -37,6 +37,8 @@ void main() {
       for (final type in [
         'CoBooth Monthly Flat Payment',
         'CoBooth Payment',
+        'Commitment Fee',
+        'Commitment Fees',
         'Commitment Payment',
         'Contribution Fee',
         'Drop-out Fee',
