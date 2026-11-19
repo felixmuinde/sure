@@ -24,18 +24,26 @@ class _FakeAuthService extends AuthService {
 }
 
 class _FakeAuthProvider extends AuthProvider {
+  bool logoutCalled = false;
+
   @override
   bool get isAuthenticated => false;
+
+  @override
+  Future<void> logout() async {
+    logoutCalled = true;
+  }
 }
 
 void main() {
-  Future<void> pumpRoute(
+  Future<_FakeAuthProvider> pumpRoute(
     WidgetTester tester,
     _FakeAuthService authService,
   ) async {
+    final authProvider = _FakeAuthProvider();
     await tester.pumpWidget(
       ChangeNotifierProvider<AuthProvider>(
-        create: (_) => _FakeAuthProvider(),
+        create: (_) => authProvider,
         child: MaterialApp(
           theme: SureTheme.light,
           locale: const Locale('en'),
@@ -66,6 +74,7 @@ void main() {
     );
     await tester.tap(find.text('Open reset'));
     await tester.pumpAndSettle();
+    return authProvider;
   }
 
   testWidgets('validates password length and confirmation', (tester) async {
@@ -84,7 +93,8 @@ void main() {
   });
 
   testWidgets('returns to the first route and shows success', (tester) async {
-    await pumpRoute(tester, _FakeAuthService({'success': true}));
+    final authProvider =
+        await pumpRoute(tester, _FakeAuthService({'success': true}));
 
     await tester.enterText(find.byType(TextFormField).at(0), 'new-password');
     await tester.enterText(find.byType(TextFormField).at(1), 'new-password');
@@ -93,6 +103,9 @@ void main() {
 
     expect(find.text('Open reset'), findsOneWidget);
     expect(find.text('Password updated. Please sign in.'), findsOneWidget);
+    // Credentials are cleared even though isAuthenticated is false (expired
+    // token arriving by email link).
+    expect(authProvider.logoutCalled, isTrue);
   });
 
   testWidgets('shows a localized error and preserves password input',

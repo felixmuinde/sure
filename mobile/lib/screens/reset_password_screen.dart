@@ -49,16 +49,25 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       _errorMessage = null;
     });
 
+    // Read the provider before awaiting so local logout still runs if the
+    // screen unmounts mid-request: a successful reset revokes the session
+    // server-side, so local auth state must be cleared to match even when we
+    // can no longer touch this screen's UI.
+    final authProvider = context.read<AuthProvider>();
+
     final result = await _authService.resetPassword(
       token: widget.token,
       password: _passwordController.text,
       passwordConfirmation: _confirmationController.text,
     );
-    if (!mounted) return;
 
     if (result['success'] == true) {
-      final authProvider = context.read<AuthProvider>();
-      if (authProvider.isAuthenticated) await authProvider.logout();
+      // Always clear local credentials, not only when the token still looks
+      // valid: a reset arriving by email link may carry an expired token
+      // (isAuthenticated == false) whose stored credentials must still be
+      // dropped now that the server has rotated the password. logout() is
+      // best-effort (it only deletes local storage) and never throws here.
+      await authProvider.logout();
       if (!mounted) return;
 
       final l = AppLocalizations.of(context);
@@ -69,6 +78,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       return;
     }
 
+    if (!mounted) return;
     setState(() {
       _isLoading = false;
       _errorMessage = _localizedResetError(result['code'] as String?);
