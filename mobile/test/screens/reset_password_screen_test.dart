@@ -95,13 +95,13 @@ void main() {
     expect(find.text('Password updated. Please sign in.'), findsOneWidget);
   });
 
-  testWidgets('shows the server error and preserves password input',
+  testWidgets('shows a localized error and preserves password input',
       (tester) async {
     await pumpRoute(
       tester,
       _FakeAuthService({
         'success': false,
-        'error': 'Reset link has expired',
+        'code': 'generic',
       }),
     );
 
@@ -110,7 +110,12 @@ void main() {
     await tester.tap(find.text('Update password'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Reset link has expired'), findsOneWidget);
+    expect(
+      find.text(
+        "We couldn't reset your password. The link may be invalid or expired.",
+      ),
+      findsOneWidget,
+    );
     expect(find.text('new-password'), findsNWidgets(2));
   });
 
