@@ -176,17 +176,26 @@ class PaymentsList extends StatelessWidget {
           SureSpacing.huge,
         ),
         children: [
-          Align(
-            alignment: Alignment.centerRight,
-            child: IconButton(
-              tooltip: l.paymentsExplainerAction,
-              onPressed: () => _showPaymentsExplainer(context),
-              icon: SureIcon(
-                SureIcons.circleInfo,
-                size: SureIconSize.lg,
-                color: palette.info,
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Payments',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
-            ),
+              IconButton(
+                tooltip: l.paymentsExplainerAction,
+                onPressed: () => _showPaymentsExplainer(context),
+                icon: SureIcon(
+                  SureIcons.circleInfo,
+                  size: SureIconSize.lg,
+                  color: palette.info,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: SureSpacing.md),
           ..._section(

@@ -21,7 +21,7 @@
   "paymentsItemDeposit": "Deposition",
   "paymentsItemDropoutPenalty": "Påföljd vid avhopp",
   "paymentsItemPenaltyFee": "Straffavgift",
-  "paymentsItemChancenFunding": "Finansiering betald av Chancen",
+  "paymentsItemChancenFunding": "Chancen betald",
   "paymentsItemMonthlyPayment": "Månadsbetalning",
   "paymentsItemBalancePayment": "Betalning mot ditt saldo",
   "paymentsItemCommitmentPayment": "Åtagandebetalning",

@@ -227,7 +227,7 @@ abstract class AppLocalizations {
   /// Friendly label replacing the internal PEI Payment type.
   ///
   /// In en, this message translates to:
-  /// **'Funding paid by Chancen'**
+  /// **'Chancen Paid'**
   String get paymentsItemChancenFunding;
 
   /// Friendly label replacing the internal CoBooth monthly flat payment type.

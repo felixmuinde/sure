@@ -73,7 +73,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get paymentsItemPenaltyFee => 'Penalty fee';
 
   @override
-  String get paymentsItemChancenFunding => 'Funding paid by Chancen';
+  String get paymentsItemChancenFunding => 'Chancen Paid';
 
   @override
   String get paymentsItemMonthlyPayment => 'Monthly payment';

@@ -51,7 +51,7 @@
   "@paymentsItemDropoutPenalty": { "description": "Friendly label for a dropout penalty." },
   "paymentsItemPenaltyFee": "Penalty fee",
   "@paymentsItemPenaltyFee": { "description": "Friendly label for a penalty fee." },
-  "paymentsItemChancenFunding": "Funding paid by Chancen",
+  "paymentsItemChancenFunding": "Chancen Paid",
   "@paymentsItemChancenFunding": { "description": "Friendly label replacing the internal PEI Payment type." },
   "paymentsItemMonthlyPayment": "Monthly payment",
   "@paymentsItemMonthlyPayment": { "description": "Friendly label replacing the internal CoBooth monthly flat payment type." },
